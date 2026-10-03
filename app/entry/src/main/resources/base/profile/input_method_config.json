@@ -1,0 +1,18 @@
+{
+  "subtypes": [
+    {
+      "icon": "$media:startIcon",
+      "id": "BridgeKeyboard",
+      "label": "$string:ime_label",
+      "locale": "pl-PL",
+      "mode": "lower"
+    },
+    {
+      "icon": "$media:startIcon",
+      "id": "BridgeKeyboardEn",
+      "label": "$string:ime_label",
+      "locale": "en-US",
+      "mode": "lower"
+    }
+  ]
+}

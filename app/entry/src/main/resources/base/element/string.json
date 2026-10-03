@@ -1,0 +1,24 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "Bridge input method"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "Bridge settings"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "Bridge"
+    },
+    {
+      "name": "ime_label",
+      "value": "Bridge"
+    },
+    {
+      "name": "ime_desc",
+      "value": "Rewrites what you type, in every app, without sending your personal data"
+    }
+  ]
+}
