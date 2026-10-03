@@ -1,0 +1,63 @@
+# ---------------------------------------------------------------------------
+# Local machine state and reference checkouts. Never committed.
+#
+# Note: gitignore does NOT support trailing comments on a pattern line, so every
+# comment here lives on its own line. A trailing "# ..." becomes part of the
+# pattern and silently matches nothing.
+# ---------------------------------------------------------------------------
+.tools/
+.home/
+node_modules/
+_ref/
+
+# ---------------------------------------------------------------------------
+# Secrets and signing material. Never committed, never printed.
+# ---------------------------------------------------------------------------
+.env
+.env.*
+*.local
+secrets/
+signature/
+*.p12
+*.cer
+*.p7b
+*.keystore
+*.jks
+.ohos-system-signing/
+
+# ---------------------------------------------------------------------------
+# DevEco Studio / hvigor / ohpm / OpenHarmony build output
+# ---------------------------------------------------------------------------
+**/build/
+**/.hvigor/
+**/.cxx/
+**/oh_modules/
+**/.preview/
+**/.clangd
+**/.clang-format
+**/.clang-tidy
+*.har
+*.hsp
+*.hap
+
+# ---------------------------------------------------------------------------
+# Downloaded installers. The DevEco Studio image is several gigabytes; a file
+# like this must never enter git history, because it cannot be removed cleanly
+# afterwards.
+# ---------------------------------------------------------------------------
+*.crdownload
+*.download
+*.dmg
+*.pkg
+*.msi
+DevEco*.zip
+command-line-tools*.zip
+
+# ---------------------------------------------------------------------------
+# Editors and OS noise
+# ---------------------------------------------------------------------------
+.idea/
+.vscode/
+*.iml
+.DS_Store
+*.log
