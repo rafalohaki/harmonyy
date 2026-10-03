@@ -183,6 +183,10 @@ export function softenImperatives(text: string): string {
 
 /** Build the offline variants for a request. Always returns three entries. */
 export function localVariants(request: RewriteRequest): Variant[] {
+  if (request.mode === 'compose') {
+    return localCompose(request);
+  }
+
   const base: string = ensureTerminalPunctuation(capitaliseSentences(tidy(request.text)));
 
   if (request.mode === 'plain') {
@@ -230,4 +234,29 @@ function lowerFirst(text: string): string {
     return text;
   }
   return text.charAt(0).toLowerCase() + text.substring(1);
+}
+
+/**
+ * Offline compose.
+ *
+ * Honest about what it is: with no model there is no language generation here, so
+ * this joins the chosen concepts into a frame. The labels say "Offline", because
+ * presenting a template as a composed sentence would be exactly the kind of small
+ * dishonesty that makes every other claim in the submission suspect.
+ */
+function localCompose(request: RewriteRequest): Variant[] {
+  const tokens: string[] = request.tokens ?? [];
+  const joined: string = tokens.join(', ');
+  if (joined.length === 0) {
+    return [
+      { label: 'Offline: nothing picked yet', text: '' },
+      { label: 'Offline: nothing picked yet', text: '' },
+      { label: 'Offline: nothing picked yet', text: '' }
+    ];
+  }
+  return [
+    { label: 'Offline: need', text: 'Potrzebuję: ' + joined + '.' },
+    { label: 'Offline: want', text: 'Chcę: ' + joined + '.' },
+    { label: 'Offline: list', text: joined + '.' }
+  ];
 }

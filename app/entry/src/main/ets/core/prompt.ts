@@ -22,6 +22,12 @@ function modeInstruction(mode: RewriteMode): string {
       'idea per sentence. Keep the meaning. This output is read by people with dyslexia, ' +
       'aphasia or cognitive fatigue, so clarity matters more than elegance.';
   }
+  if (mode === 'compose') {
+    return 'The user cannot type and speaks through pictograms instead. Compose one short, ' +
+      'grammatical, first-person sentence in the requested language that expresses exactly ' +
+      'the listed concepts and nothing more. Do not invent names, places, numbers or reasons ' +
+      'that the concepts do not imply.';
+  }
   return 'Rewrite in a polite, professional register suitable for a workplace or an ' +
     'official message. Keep the meaning and stay concise. Do not become obsequious.';
 }
@@ -37,6 +43,8 @@ export function buildSystemPrompt(): string {
     'Hard rules:',
     '1. Reply with the requested JSON only. No markdown, no code fences, no commentary.',
     '2. Match the language of the user text. Do not translate.',
+    '2b. In compose mode there is no user text: the user picked concepts, and the',
+    '    requested language is the one to answer in.',
     '3. Tokens shaped like [[KIND_1]] are private values that were removed before you saw',
     '   the text. Copy them into your output exactly, character for character, in the same',
     '   place in the sentence. Never invent them and never explain them.',
@@ -56,8 +64,19 @@ export function buildUserPrompt(request: RewriteRequest): string {
     lines.push('The user is writing in this app, so match its register: ' + request.contextHint);
   }
   lines.push('');
-  lines.push('User text:');
-  lines.push(request.text);
+
+  if (request.mode === 'compose') {
+    // There is no user text in compose mode; the concepts replace it.
+    const tokens: string[] = request.tokens ?? [];
+    lines.push('Concepts chosen by the user, in the order they picked them:');
+    lines.push(tokens.join(', '));
+    lines.push('');
+    lines.push('Compose the sentence from these concepts only.');
+  } else {
+    lines.push('User text:');
+    lines.push(request.text);
+  }
+
   lines.push('');
   lines.push('Reply with JSON only, matching: ' + OUTPUT_SCHEMA);
   return lines.join('\n');

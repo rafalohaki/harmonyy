@@ -350,3 +350,25 @@ variants from a real model in 1233 ms, and tapping one replaced the field conten
 `replaced 41 characters`. Polish conjugation and diacritics came back correct. That last status
 line is also the sharpest available proof that the cursor API is used the right way round:
 `deleteForwardSync(41)` removed exactly the 41 characters that preceded the cursor.
+
+### Session 4 — closing an honesty gap by building the missing mode
+
+An audit of the README against the code found a claim with nothing behind it: the product
+advertised two modes, and `grep -ri compose app/ core/` returned nothing. The options were to
+weaken the claim or to build the mode. We built it, because Compose is where the accessibility
+case is strongest.
+
+It needed a new mode in the core contract, a compose instruction and a concept list in the
+prompt, an offline fallback that labels itself as offline rather than passing a template off as
+composed language, eight tests, and a concept strip in the panel. Everything else already
+existed — the engine, the strict parser, the variant rendering, the editor insertion — which is
+the payoff of having built the engine platform-agnostic and first.
+
+Result: three concept taps (`jeść`, `później`, `rodzina`) produced `Zjem później z rodziną.`,
+with correct Polish aspect and case, and tapping it placed the sentence in the field.
+
+One incidental lesson: fitting the strip meant growing the keyboard panel from 34% to 46% of the
+display, and because that ratio is a single named constant the change was one number.
+
+The useful habit here is not the feature. It is that the README was checked against the code,
+and the discrepancy was treated as a defect rather than a wording problem.

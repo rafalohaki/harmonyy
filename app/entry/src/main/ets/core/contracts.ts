@@ -7,10 +7,10 @@
  */
 
 /** What the user asked the keyboard to do with the text. */
-export type RewriteMode = 'correct' | 'plain' | 'polite';
+export type RewriteMode = 'correct' | 'plain' | 'polite' | 'compose';
 
 /** All modes, for UI iteration and validation. */
-export const REWRITE_MODES: RewriteMode[] = ['correct', 'plain', 'polite'];
+export const REWRITE_MODES: RewriteMode[] = ['correct', 'plain', 'polite', 'compose'];
 
 /** Human-facing label for a mode. Kept here so UI and tests agree. */
 export function modeLabel(mode: RewriteMode): string {
@@ -20,18 +20,26 @@ export function modeLabel(mode: RewriteMode): string {
   if (mode === 'plain') {
     return 'Plain';
   }
+  if (mode === 'compose') {
+    return 'Compose';
+  }
   return 'Polite';
 }
 
 /** One rewrite job. */
 export interface RewriteRequest {
-  /** Raw text from the focused editor. */
+  /** Raw text from the focused editor. Empty for a compose request. */
   text: string;
   mode: RewriteMode;
   /** Best-effort hint about the hosting app, e.g. "Messages". May be empty. */
   contextHint: string;
   /** BCP-47-ish tag of the text language, e.g. "pl-PL". */
   locale: string;
+  /**
+   * Semantic concepts chosen instead of typing, for the compose mode.
+   * Optional so that existing rewrite callers stay unchanged.
+   */
+  tokens?: string[];
 }
 
 /** One candidate rewrite. */

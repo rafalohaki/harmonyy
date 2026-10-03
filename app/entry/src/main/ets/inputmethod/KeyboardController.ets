@@ -42,7 +42,7 @@ import { BridgeSettings } from '../common/Settings';
 import { EVENT_SETTINGS_CHANGED, decodeSettings, requestSettings } from '../common/SettingsBus';
 
 /** Keyboard height as a fraction of the display. */
-const KEYBOARD_HEIGHT_RATIO: number = 0.34;
+const KEYBOARD_HEIGHT_RATIO: number = 0.46;
 
 /** Keys published to AppStorage so the ArkUI page can render state. */
 export const KEY_ATTACHED: string = 'bridgeAttached';
@@ -346,12 +346,13 @@ export class KeyboardController {
    * verbatim on the keyboard, so a degraded answer is never presented as a normal
    * one.
    */
-  async rewrite(mode: RewriteMode): Promise<RewriteOutcome> {
+  async rewrite(mode: RewriteMode, tokens: string[]): Promise<RewriteOutcome> {
     const request: RewriteRequest = {
       text: this.getFieldText(),
       mode: mode,
       contextHint: this.contextHint,
-      locale: 'pl-PL'
+      locale: 'pl-PL',
+      tokens: tokens
     };
 
     const context: InputMethodExtensionContext | undefined = this.context;

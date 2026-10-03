@@ -60,8 +60,20 @@ export class RewriteEngine {
    */
   async rewrite(request: RewriteRequest): Promise<RewriteOutcome> {
     const trimmed: string = request.text.trim();
+    const tokens: string[] = request.tokens ?? [];
 
-    if (trimmed.length === 0) {
+    if (request.mode === 'compose') {
+      // A compose request has no text by design: the concepts are the input.
+      if (tokens.length === 0) {
+        return {
+          variants: [],
+          source: 'local',
+          fallbackReason: 'Nothing picked yet.',
+          redactedCount: 0,
+          latencyMs: 0,
+        };
+      }
+    } else if (trimmed.length === 0) {
       return {
         variants: [],
         source: 'local',
@@ -87,6 +99,7 @@ export class RewriteEngine {
       mode: request.mode,
       contextHint: request.contextHint,
       locale: request.locale,
+      tokens: tokens,
     };
 
     const startedAt: number = this.now();
