@@ -19,6 +19,7 @@ const KEY_BASE_URL: string = 'baseUrl';
 const KEY_MODEL: string = 'model';
 const KEY_API_KEY: string = 'apiKey';
 const KEY_SEEN_AT: string = 'keyboardSeenAt';
+const KEY_OFFLINE_ONLY: string = 'offlineOnly';
 
 /**
  * Defaults for the rewrite endpoint.
@@ -38,6 +39,14 @@ export class BridgeSettings {
   baseUrl: string = DEFAULT_BASE_URL;
   model: string = DEFAULT_MODEL;
   apiKey: string = '';
+  /**
+   * When true the rewrite never contacts the network at all.
+   *
+   * A user who cannot accept sending even scrubbed text anywhere can still use the
+   * product, which is the difference between a privacy feature and a privacy
+   * claim.
+   */
+  offlineOnly: boolean = false;
   /**
    * False when the preferences store could not be opened at all.
    *
@@ -102,6 +111,7 @@ export class BridgeSettings {
       settings.baseUrl = store.getSync(KEY_BASE_URL, DEFAULT_BASE_URL) as string;
       settings.model = store.getSync(KEY_MODEL, DEFAULT_MODEL) as string;
       settings.apiKey = store.getSync(KEY_API_KEY, '') as string;
+      settings.offlineOnly = store.getSync(KEY_OFFLINE_ONLY, false) as boolean;
     } catch (err) {
       // Falling back to defaults is correct here: an unreadable store must not
       // prevent the keyboard from starting. But it must not masquerade as "no key
@@ -120,6 +130,7 @@ export class BridgeSettings {
       store.putSync(KEY_BASE_URL, settings.baseUrl);
       store.putSync(KEY_MODEL, settings.model);
       store.putSync(KEY_API_KEY, settings.apiKey);
+      store.putSync(KEY_OFFLINE_ONLY, settings.offlineOnly);
       store.flush()
         .then((): void => {
           hilog.info(DOMAIN, TAG, 'settings saved');

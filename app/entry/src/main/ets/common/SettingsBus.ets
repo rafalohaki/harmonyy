@@ -39,6 +39,7 @@ interface SettingsDto {
   baseUrl?: string;
   model?: string;
   apiKey?: string;
+  offlineOnly?: boolean;
 }
 
 /** Serialise for the wire. Deliberately explicit rather than reflection. */
@@ -46,7 +47,8 @@ export function encodeSettings(settings: BridgeSettings): string {
   const dto: SettingsDto = {
     baseUrl: settings.baseUrl,
     model: settings.model,
-    apiKey: settings.apiKey
+    apiKey: settings.apiKey,
+    offlineOnly: settings.offlineOnly
   };
   return JSON.stringify(dto);
 }
@@ -69,6 +71,9 @@ export function decodeSettings(payload: string | undefined): BridgeSettings | un
     }
     if (dto.apiKey !== undefined) {
       settings.apiKey = dto.apiKey;
+    }
+    if (dto.offlineOnly !== undefined) {
+      settings.offlineOnly = dto.offlineOnly;
     }
     return settings;
   } catch (err) {

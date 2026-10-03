@@ -208,6 +208,54 @@ if (fs.existsSync(moduleJsonPath)) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// 5. The generated core copy matches its canonical source
+//
+// core/src is the single source of truth and app/entry/src/main/ets/core is
+// generated from it by scripts/sync-core.sh. That invariant is easy to break and
+// impossible to notice: both versions compile, and the tests run against core/src
+// rather than the copy, so a stale copy passes every other check.
+//
+// This was not hypothetical. Prelint found it in review: the canonical source had
+// `forceOffline?: boolean` while the copy still had the required `forceOffline:
+// boolean`, because sync-core.sh had been run before the field was made optional
+// and not afterwards. Hence this check.
+// ---------------------------------------------------------------------------
+console.log('Generated core copy');
+
+const canonicalDir = path.join(repoRoot, 'core/src');
+const generatedDir = path.join(appRoot, 'entry/src/main/ets/core');
+
+/** The same transform scripts/sync-core.sh applies when copying. */
+function transformForArkTs(text) {
+  return text.replace(
+    /(from\s+["'])(\.\.?\/[^"']+?)\.ts(["'])/g,
+    '$1$2$3',
+  );
+}
+
+if (!fs.existsSync(canonicalDir)) {
+  fail('core/src does not exist, so the generated copy cannot be checked');
+} else {
+  const canonicalFiles = walkFiles(canonicalDir, (file) => file.endsWith('.ts'));
+  for (const source of canonicalFiles) {
+    const relative = path.relative(canonicalDir, source);
+    const generated = path.join(generatedDir, relative);
+    if (!fs.existsSync(generated)) {
+      fail(`${relative} exists in core/src but is missing from the generated copy`);
+      continue;
+    }
+    const expected = transformForArkTs(fs.readFileSync(source, 'utf8'));
+    const actual = fs.readFileSync(generated, 'utf8');
+    if (expected !== actual) {
+      fail(`${relative} has drifted from core/src; run scripts/sync-core.sh`);
+    }
+  }
+  if (failures === 0) {
+    ok(`${canonicalFiles.length} generated files match core/src exactly`);
+  }
+}
+
 console.log('');
 if (failures > 0) {
   console.log(`${failures} of ${checks} checks FAILED`);

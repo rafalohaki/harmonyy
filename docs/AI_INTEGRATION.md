@@ -137,3 +137,29 @@ The engine never throws for an expected failure. It returns a `RewriteOutcome`
 with `source: 'remote' | 'local'` and a `fallbackReason` that the keyboard renders.
 Silent degradation is treated as a bug: if the answer came from the offline
 engine, the UI says so.
+
+---
+
+## 9. Offline-only mode
+
+A switch on the settings screen makes the rewrite never contact the network **at all**. It is for
+the user who cannot accept sending even scrubbed text to a third party, and it is the difference
+between a privacy feature and a privacy claim.
+
+How it is enforced, rather than merely intended:
+
+- `EngineOptions.forceOffline` makes `RewriteEngine.rewrite` return the local result **before the
+  transport is reached**, so no request can be constructed. A policy that lives in an `if` around
+  the call site could be refactored away by accident; this cannot.
+- Because nothing leaves the device, nothing needs withholding, so the outcome reports
+  `redactedCount: 0` rather than a count that would imply a transmission happened.
+- Four tests assert the promise directly, on the transport never being called — not on the outcome
+  merely looking local, which it would in either case.
+
+Verified on the emulator with the endpoint and the API key both configured: asking for a rewrite
+produced `offline: Offline-only mode is on.` and a local result, with no request made
+(`docs/evidence/09-offline-only.png`).
+
+In this mode the data-handling table in section 3 is simpler than it looks: the "what leaves the
+device" row becomes *nothing*, and the redaction machinery is bypassed because it has nothing to
+protect.
