@@ -35,11 +35,6 @@ struct Home {
   @State draft: string = '';
   /** When on, the keyboard never contacts the network at all. */
   @State offlineOnly: boolean = false;
-  /** The directory this ability resolved preferences to; compared against the
-   *  keyboard's own, which is shown in its status line. */
-  @State preferencesDir: string = '';
-  /** What the keyboard last wrote into the shared store, if it is shared. */
-  @State keyboardSeenAt: string = 'never';
   /** Answers the keyboard's request for the configuration. */
   private subscriber: commonEventManager.CommonEventSubscriber | undefined = undefined;
 
@@ -76,8 +71,6 @@ struct Home {
     this.model = loaded.model;
     this.apiKey = loaded.apiKey;
     this.offlineOnly = loaded.offlineOnly;
-    this.preferencesDir = context.preferencesDir;
-    this.keyboardSeenAt = BridgeSettings.readSeenAt(context);
     // Send what we have, and answer future requests from the keyboard.
     this.publish();
     try {
@@ -199,12 +192,6 @@ struct Home {
         .fontSize(12)
         .fontColor('#555555')
 
-      Text('ability store: ' + this.preferencesDir)
-        .fontSize(10)
-        .fontColor('#888888')
-      Text('keyboard saw settings at: ' + this.keyboardSeenAt)
-        .fontSize(10)
-        .fontColor('#888888')
 
       Blank()
     }
