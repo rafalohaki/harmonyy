@@ -18,9 +18,10 @@ against API 24. Host: macOS on Apple Silicon.
 | npm | 11.19.1 | verified |
 | `@deveco/deveco-cli` | 1.3.4, installed repo-locally into `.tools/` | verified |
 | TypeScript (for core type-checking) | 7.0.2 | verified |
-| DevEco Studio for macOS (Apple Silicon) | installer downloading | **not yet verified** |
-| OpenHarmony SDK | API 23 (OpenHarmony 6.1) | download started, see step 3 |
-| Emulator system image | API 24 device profile | **not yet verified** |
+| DevEco Studio for macOS (Apple Silicon) | 6.1.1.280, build `243.24978.46.36.611280` | **installed and used** — it builds, signs and runs the project |
+| OpenHarmony SDK (bundled) | API 24, at `Contents/sdk/default/openharmony` | **verified** — every build uses it |
+| Full OpenHarmony SDK (public mirror) | API 23, OpenHarmony 6.1.0.31 | **downloaded, checksum-verified and inspected**; kept as the documented fallback and as the source of the review of the archive layout |
+| Emulator system image | `HarmonyOS 6.1.1(24)`, phone, 6.1.0.126 | **installed**; emulator `bridge_phone` runs on it |
 
 Emulator capability limits that shaped the design (from the organisers' comparison table):
 no real camera, no NFC, no Bluetooth pairing, no cellular, no biometrics, **no distributed
@@ -336,14 +337,25 @@ Drawn from the organisers' FAQ, because these are the failures that actually hap
 
 ---
 
-## What is not verified yet
+## What is not verified
 
-Stated plainly so nobody mistakes this document for a claim:
+Stated plainly so nobody mistakes this document for a claim. Everything below was true as of the
+last update; everything *not* listed here has been executed and the evidence is committed.
 
-- DevEco Studio is not installed, so nothing past step 1 has been executed.
-- The SDK archive has been confirmed to exist and its size verified, but **not downloaded to
-  completion, extracted, or inspected**.
-- No emulator has been created or started.
-- No `.hap` has been built, and the input method has never run.
-- The project configuration (`build-profile.json5`, `module.json5`) follows the hackathon
-  template and the official IME sample, but it has not been through a compiler.
+- **Nothing has run on physical hardware.** Every result comes from the DevEco emulator
+  (`bridge_phone`, `HarmonyOS 6.1.1(24)`, phone). Real-device behaviour, real signing identities
+  and real sensors are untested.
+- **The keyboard has not been exercised in a messaging app**, because the emulator image ships
+  none. The system-wide claim is demonstrated in the settings screen and the browser instead.
+  This is the weakest point of the demonstration and it is stated rather than glossed.
+- **The demo recording does not exist yet.** The shot list is in [`DEMO.md`](DEMO.md); six
+  screenshots already exist under [`evidence/`](evidence/).
+- **The offline engine's Polish has not been reviewed by a native speaker.** Its output is
+  deterministic templates, labelled as such in the UI, and it is not claimed to be fluent.
+- **The Prelint MCP connection is configured but not authenticated.** It needs OAuth, so the agent
+  loop runs through pull-request comments rather than through the MCP tools.
+- **The remote path has not been tested against a second provider.** The transport is
+  provider-agnostic by construction and the response parser has tests for the shapes it must
+  reject, but only one OpenAI-compatible endpoint has been called for real.
+
+Anything else in this document has been executed. Where a step has not, it says so at the step.

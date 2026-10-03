@@ -15,7 +15,8 @@ built with AI tooling) and [`ARCHITECTURE.md`](ARCHITECTURE.md) (component map).
 | --- | --- |
 | Provider | Any **OpenAI-compatible** `/chat/completions` endpoint |
 | Configuration | Base URL, model name and API key, entered on the device |
-| Defaults | `https://api.openai.com/v1`, `gpt-4o-mini` |
+| Defaults | `https://api.groq.com/openai/v1`, `openai/gpt-oss-120b` |
+| Defaults are editable | All three fields are exposed on the settings screen; the defaults exist so the only value a user must type is the secret itself |
 | Protocol | HTTPS, JSON request and response |
 | Runs where | **Remote.** There is no on-device model in this submission, and we do not claim one |
 | Timeout | 12 seconds per attempt (`DEFAULT_OPTIONS.timeoutMs`) |
