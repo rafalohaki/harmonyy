@@ -121,13 +121,40 @@ struct Home {
         .fontSize(13)
         .fontColor('#555555')
 
-      TextInput({ text: this.baseUrl, placeholder: 'Base URL' })
-        .onChange((value: string) => { this.baseUrl = value; })
-      TextInput({ text: this.model, placeholder: 'Model' })
-        .onChange((value: string) => { this.model = value; })
-      TextInput({ text: this.apiKey, placeholder: 'API key' })
-        .type(InputType.Password)
-        .onChange((value: string) => { this.apiKey = value; })
+      // Each field has an explicit clear control. Without one there was no way to
+      // replace a value, only to append to it, which made it impossible to point
+      // the keyboard at a different endpoint - including a deliberately
+      // unreachable one, which is how the offline fallback is demonstrated.
+      Row({ space: 8 }) {
+        TextInput({ text: this.baseUrl, placeholder: 'Base URL' })
+          .layoutWeight(1)
+          .onChange((value: string) => { this.baseUrl = value; })
+        Button('Clear')
+          .width(84)
+          .onClick(() => { this.baseUrl = ''; })
+      }
+      .width('100%')
+
+      Row({ space: 8 }) {
+        TextInput({ text: this.model, placeholder: 'Model' })
+          .layoutWeight(1)
+          .onChange((value: string) => { this.model = value; })
+        Button('Clear')
+          .width(84)
+          .onClick(() => { this.model = ''; })
+      }
+      .width('100%')
+
+      Row({ space: 8 }) {
+        TextInput({ text: this.apiKey, placeholder: 'API key' })
+          .type(InputType.Password)
+          .layoutWeight(1)
+          .onChange((value: string) => { this.apiKey = value; })
+        Button('Clear')
+          .width(84)
+          .onClick(() => { this.apiKey = ''; })
+      }
+      .width('100%')
 
       Button('Save')
         .width('100%')

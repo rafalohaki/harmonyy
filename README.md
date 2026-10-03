@@ -19,15 +19,22 @@ not something an outside developer gets to extend.
 ## What Bridge is
 
 Bridge is not another app. It is an **input method** — a system component that replaces the
-keyboard for **every text field on the device**. Two modes, one capability:
+keyboard for **every text field on the device**.
 
-| Mode | Interaction | Who it is for |
-| --- | --- | --- |
-| **Rewrite** | Type however you can, then tap *Correct / Plain / Polite*. The field text is rewritten and replaced in place. | Dyslexia, aphasia, non-native speakers, anyone writing to an office instead of a friend |
-| **Compose** | Tap a few semantic tokens (🍽️ 🕐 1) instead of typing. A full grammatical sentence is produced, in the register of the app you are in. | Non-speaking users, severe motor impairment |
+**One working mode, and one designed on top of the same engine:**
 
-Because the same engine serves both modes, we build **one platform capability and take it
-end to end** rather than five shallow integrations.
+| Mode | Interaction | Who it is for | State |
+| --- | --- | --- | --- |
+| **Rewrite** | Type however you can, then tap *Correct / Plain / Polite*. The field text is rewritten in place. | Dyslexia, aphasia, non-native speakers, anyone writing to an office instead of a friend | **working**, verified on the emulator |
+| **Compose** | Tap a few semantic tokens (🍽️ 🕐 1) instead of typing; a full grammatical sentence is produced in the register of the app you are in. | Non-speaking users, severe motor impairment | **designed, not built.** The engine, the variant flow and the insertion path it needs are all in place and verified; the token strip itself is not written |
+
+Compose is the mode with the strongest case for existing, so this status is stated rather than
+glossed: claiming a second mode that the code does not contain would be exactly the kind of
+unsupported assertion the challenge warns about. The plan for it is in
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+Because one engine serves both modes, we build **one platform capability and take it end to
+end** rather than five shallow integrations.
 
 ## Why an open platform is the point
 
@@ -118,9 +125,10 @@ characters before the cursor were removed and the replacement landed in their pl
 | `.hap` installed on the emulator | **done** |
 | Input method gate: attach, read and write in another app | **passed**, with screenshots |
 | Rewrite through a real model, applied to the field | **done**, see above |
-| Personal-data scrubbing visible in the UI | implemented; not yet captured as evidence |
-| Offline fallback on failure | implemented and unit-tested; not yet captured as evidence |
-| Demo recording | not yet |
+| Personal-data scrubbing, evidenced on the device | **done** — `2 hidden`, and the values restored in the variants |
+| Offline fallback on failure, evidenced on the device | **done** — an unreachable endpoint produced `offline: The model service could not be reached.` and a usable offline result |
+| Compose mode (token strip) | not built; see the modes table above |
+| Demo recording | not yet — the shot list is ready in [`docs/DEMO.md`](docs/DEMO.md) |
 
 The first milestone is not the AI. It is proving that a third-party input method
 can attach to another application's text field and write into it, because every
