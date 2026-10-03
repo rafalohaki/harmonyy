@@ -200,6 +200,14 @@ relative import, every `$string:`/`$media:`/`$color:`/`$profile:` reference, eve
 page and every `srcEntry` resolves. It is not a substitute for `devecocli build`; it removes
 the cheap failures from the expensive ones.
 
+**Untested code was moved to where it could be tested.** The OpenAI-compatible request and
+response shapes initially lived in the ArkTS transport file, which cannot be unit-tested
+without a device. That is exactly where a silent break against a different provider would
+hide, so both directions were moved into `core/src/openai.ts` as pure functions and covered by
+14 tests enumerating every malformed response shape (non-JSON, missing choices, empty choices,
+missing message, null message, non-string content, empty content, and extra fields). The
+transport now contains no protocol logic at all.
+
 **Milestone framing.** The ArkTS skeleton deliberately contains no engine wiring at first.
 The first milestone is proving that a third-party input method can attach to another
 application's text field and write into it, because every other claim depends on that. The

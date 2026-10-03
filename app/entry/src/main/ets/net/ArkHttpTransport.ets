@@ -23,6 +23,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 
 import type { LlmFailureKind, LlmMessage, LlmTransport } from '../core/contracts';
 import { LlmError } from '../core/contracts';
+import { DEFAULT_TEMPERATURE, buildChatRequestBody, parseChatCompletion } from '../core/openai';
 import { TAG, DOMAIN } from '../common/Log';
 
 /** Error codes taken from the HttpRequest error-code table. */
@@ -31,26 +32,6 @@ const ERR_RESOLVE_HOST: number = 2300006;
 const ERR_CONNECT: number = 2300007;
 const ERR_INVALID_URL: number = 2300003;
 const ERR_EMPTY_REPLY: number = 2300052;
-
-interface ChatMessageDto {
-  role: string;
-  content: string;
-}
-
-interface ChatRequestDto {
-  model: string;
-  messages: ChatMessageDto[];
-  temperature: number;
-  stream: boolean;
-}
-
-interface ChatChoiceDto {
-  message?: ChatMessageDto;
-}
-
-interface ChatResponseDto {
-  choices?: ChatChoiceDto[];
-}
 
 function classify(code: number): LlmFailureKind {
   if (code === ERR_TIMEOUT) {
@@ -93,12 +74,9 @@ export class ArkHttpTransport implements LlmTransport {
       throw new LlmError('auth', 'no API key configured', 0);
     }
 
-    const payload: ChatRequestDto = {
-      model: this.model,
-      messages: this.toDto(messages),
-      temperature: 0.3,
-      stream: false
-    };
+    // The wire format is built and parsed by core/openai, where both directions
+    // are unit-tested. Nothing about the protocol lives in this file.
+    const payload: string = buildChatRequestBody(this.model, messages, DEFAULT_TEMPERATURE);
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -108,7 +86,7 @@ export class ArkHttpTransport implements LlmTransport {
     const options: http.HttpRequestOptions = {
       method: http.RequestMethod.POST,
       header: headers,
-      extraData: JSON.stringify(payload),
+      extraData: payload,
       expectDataType: http.HttpDataType.STRING,
       connectTimeout: timeoutMs,
       readTimeout: timeoutMs
@@ -129,7 +107,7 @@ export class ArkHttpTransport implements LlmTransport {
         throw new LlmError(kind, 'HTTP ' + status + ': ' + body.substring(0, 200), status);
       }
 
-      return this.extractContent(body);
+      return parseChatCompletion(body);
     } catch (err) {
       if (err instanceof LlmError) {
         throw err;
@@ -143,35 +121,5 @@ export class ArkHttpTransport implements LlmTransport {
       // Documented requirement: release the request object or leak memory.
       request.destroy();
     }
-  }
-
-  /** Pull the assistant message out of an OpenAI-compatible response. */
-  private extractContent(body: string): string {
-    let dto: ChatResponseDto;
-    try {
-      dto = JSON.parse(body) as ChatResponseDto;
-    } catch (err) {
-      throw new LlmError('transport', 'response body was not JSON', 0);
-    }
-
-    const choices: ChatChoiceDto[] | undefined = dto.choices;
-    if (choices === undefined || choices.length === 0) {
-      throw new LlmError('transport', 'response contained no choices', 0);
-    }
-
-    const message: ChatMessageDto | undefined = choices[0].message;
-    if (message === undefined || typeof message.content !== 'string'
-      || message.content.length === 0) {
-      throw new LlmError('transport', 'response contained no message content', 0);
-    }
-    return message.content;
-  }
-
-  private toDto(messages: LlmMessage[]): ChatMessageDto[] {
-    const out: ChatMessageDto[] = [];
-    for (let i: number = 0; i < messages.length; i++) {
-      out.push({ role: messages[i].role, content: messages[i].content });
-    }
-    return out;
   }
 }
