@@ -61,13 +61,22 @@ echo "data directory : $DATA_DIR"
 echo "region file    : $REGION_FILE"
 
 if [ ! -f "$REGION_FILE" ]; then
-  cat >&2 <<MSG
-$REGION_FILE does not exist.
-
-Launch DevEco Studio once and complete its first-launch setup, which creates its
-configuration files, then close it and re-run this script.
-MSG
-  exit 1
+  # Verified: the file is a one-line XML document, and writing it before the IDE
+  # has ever run is harmless. Creating it here removes a GUI round trip that would
+  # otherwise be on the critical path.
+  echo "not present; creating it (this is what the first IDE launch would do)"
+  if [ "$DRY_RUN" = "1" ]; then
+    echo "dry run: would create it with <countryregion name=\"CN\"/>"
+    exit 0
+  fi
+  mkdir -p "$OPTIONS_DIR"
+  printf '<?xml version="1.0" encoding="UTF-8"?>\n<countryregion name="CN"/>\n' > "$REGION_FILE"
+  echo "created        : $(grep -o '<countryregion[^/]*/>' "$REGION_FILE")"
+  echo
+  echo "Start DevEco Studio once so it completes its own first-launch setup, then"
+  echo "confirm in the device manager that phone, tablet, 2-in-1 and TV profiles are"
+  echo "available."
+  exit 0
 fi
 
 echo "current        : $(grep -o '<countryregion[^/]*/>' "$REGION_FILE" || echo 'not found')"

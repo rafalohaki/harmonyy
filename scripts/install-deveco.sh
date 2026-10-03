@@ -58,7 +58,11 @@ mkdir -p "$TARGET"
 
 report() {
   local app="$1"
-  local info="$app/Contents/product-info.json"
+  # Verified layout for DevEco Studio 6.1.1.280 on macOS aarch64.
+  local info="$app/Contents/Resources/product-info.json"
+  if [ ! -f "$info" ]; then
+    info="$app/Contents/product-info.json"
+  fi
   if [ ! -f "$info" ]; then
     info="$app/product-info.json"
   fi
@@ -85,8 +89,7 @@ report() {
     console.log("  ~/Library/Application Support/Huawei/" + dataDir + "/options/country.region.xml");
   ' "$info"
   echo
-  echo "Next: launch DevEco Studio once (it creates that file), close it, then run"
-  echo "      scripts/set-devco-region-cn.sh"
+  echo "Next: scripts/set-devco-region-cn.sh   (it creates that file if absent)"
 }
 
 case "$INSTALLER" in
@@ -118,17 +121,30 @@ case "$INSTALLER" in
     ;;
 
   *.zip)
-    echo "== unzipping to $TARGET =="
-    unzip -q -o "$INSTALLER" -d "$TARGET"
-    APP_SRC="$(find "$TARGET" -maxdepth 2 -name '*.app' -print -newer "$INSTALLER" | head -1)"
-    if [ -z "$APP_SRC" ]; then
-      APP_SRC="$(find "$TARGET" -maxdepth 2 -name 'DevEco*.app' -print | head -1)"
+    # Verified: Huawei's macOS download for 6.1.1.280 is a zip whose ONLY content
+    # is a .dmg. Unzipping it "to $TARGET" as an .app would fail, so detect the
+    # nested disk image and hand over to the .dmg branch by re-invoking this
+    # script, which keeps that logic in one place.
+    WORK="$(dirname "$INSTALLER")/.deveco-unpack"
+    mkdir -p "$WORK"
+    echo "== unzipping =="
+    unzip -q -o "$INSTALLER" -d "$WORK"
+
+    DMG="$(find "$WORK" -maxdepth 2 -name '*.dmg' -print | head -1)"
+    if [ -n "$DMG" ]; then
+      echo "found a disk image inside the zip: $(basename "$DMG")"
+      echo
+      exec "$0" "$DMG" --target "$TARGET"
     fi
+
+    APP_SRC="$(find "$WORK" -maxdepth 3 -name '*.app' -print | head -1)"
     if [ -z "$APP_SRC" ]; then
-      echo "Unzipped, but no .app was found under $TARGET." >&2
+      echo "Unzipped, but no .dmg or .app was found inside." >&2
       exit 1
     fi
-    report "$APP_SRC"
+    rm -rf "$TARGET/$(basename "$APP_SRC")"
+    cp -R "$APP_SRC" "$TARGET/"
+    report "$TARGET/$(basename "$APP_SRC")"
     ;;
 
   *)

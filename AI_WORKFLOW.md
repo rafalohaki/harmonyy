@@ -220,6 +220,29 @@ hide, so both directions were moved into `core/src/openai.ts` as pure functions 
 missing message, null message, non-string content, empty content, and extra fields). The
 transport now contains no protocol logic at all.
 
+**Two compile errors found by reading the SDK's own type declarations.** Once the Full
+OpenHarmony SDK had been downloaded and extracted, its `ets/api/**.d.ts` files became the
+authoritative API reference for the exact version being targeted — better than the
+documentation, and far better than recollection. Every platform call in the input method was
+checked against them, which caught two defects that no amount of further review-by-eye would
+have found, because both come from a plausible-looking official example:
+
+1. **`inputMethodAbility` does not exist anywhere in the API 23 declarations.** It is used
+   throughout OpenHarmony's own IME guide, but it is not exported by `@kit.IMEKit`, not
+   declared in `@ohos.inputMethodEngine`, and appears nowhere else in the SDK. The panel and
+   event APIs are methods of the `InputMethodAbility` *interface*, obtained with
+   `inputMethodEngine.getInputMethodAbility()`. The code as originally written would not have
+   compiled, and the error message would have pointed at an import rather than at the mental
+   model that was wrong.
+2. **`off('inputStop', callback)` requires its callback**, while `off('inputStart', callback?)`
+   does not. The original code called `off('inputStop')` with no argument, which is a type
+   error, and the fix is not just a signature change: the callback reference has to be retained
+   for the lifetime of the listener.
+
+A third, smaller defect came out of the same pass: `UIContext.getHostContext()` is declared as
+returning `Context | undefined`, so the settings screen now handles an absent context and says
+so, rather than dereferencing it.
+
 **A tool built so the AI could be judged before the device existed.** `scripts/try-engine.mjs`
 drives the shipped engine from the terminal. With `--mock` it starts a local OpenAI-shaped
 server, so the whole HTTP path — request serialisation, redaction, placeholder restoration,

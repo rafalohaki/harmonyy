@@ -2,23 +2,28 @@
  * KeyboardController — the bridge between the system input method framework and
  * our UI.
  *
- * Verified against OpenHarmony's IME Kit documentation before writing:
- *   - inputMethodAbility.createPanel(context, panelInfo) -> Panel
- *   - panel.resize(w, h) and panel.setUiContent('inputmethod/pages/Index')
- *   - inputMethodAbility.on('inputStart', (kbController, inputClient) => ...)
- *   - inputMethodAbility.on('inputStop', () => ...)
- *   - InputClient: insertTextSync / getTextIndexAtCursorSync / getForwardSync /
- *     deleteForwardSync, reached through the InputMethodEngine. Note that
- *     "Forward" means before the cursor here; see the naming trap below.
+ * Every platform call in this file was verified against the type declarations in
+ * the Full OpenHarmony SDK for API 23 (`ets/api/@ohos.inputMethodEngine.d.ts`,
+ * `@ohos.inputMethod.Panel.d.ts`, `@ohos.InputMethodExtensionAbility.d.ts`)
+ * before it was written, not recalled from documentation examples. Two findings
+ * from that verification are worth recording, because both are compile errors that
+ * a plausible-looking sample would have introduced:
+ *
+ *   1. There is no `inputMethodAbility` symbol anywhere in the API 23
+ *      declarations. The panel and event APIs are methods of the
+ *      `InputMethodAbility` interface, obtained with
+ *      `inputMethodEngine.getInputMethodAbility()`.
+ *   2. `off('inputStop', callback)` requires the callback, while
+ *      `off('inputStart', callback?)` does not. The reference must be kept.
  *
  * SCOPE NOTE: this file deliberately contains no AI or engine code. The first
  * milestone is proving that a third-party input method can attach to another
- * application's text field and write into it. Wiring the rewrite engine in is the
- * next step, once this is observed working on the emulator.
+ * application's text field and write into it.
  */
 
-import { inputMethodAbility } from '@kit.IMEKit';
-import type { inputMethodEngine, InputMethodExtensionContext } from '@kit.IMEKit';
+import { inputMethodEngine } from '@kit.IMEKit';
+import { PanelFlag, PanelType } from '@kit.IMEKit';
+import type { InputMethodExtensionContext, PanelInfo } from '@kit.IMEKit';
 import { display } from '@kit.ArkUI';
 import type { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -38,16 +43,27 @@ export const KEY_STATUS: string = 'bridgeStatus';
 
 export class KeyboardController {
   private context: InputMethodExtensionContext | undefined = undefined;
+  private ability: inputMethodEngine.InputMethodAbility | undefined = undefined;
   private panel: inputMethodEngine.Panel | undefined = undefined;
   private inputClient: inputMethodEngine.InputClient | undefined = undefined;
+  private keyboardDelegate: inputMethodEngine.KeyboardDelegate | undefined = undefined;
+  /** Kept because off('inputStop') requires the exact callback reference. */
+  private inputStopCallback: (() => void) | undefined = undefined;
   private fieldText: string = '';
   private engine: RewriteEngine | undefined = undefined;
-  private keyboardDelegate: inputMethodEngine.KeyboardDelegate | undefined = undefined;
   /** Best-effort name of the hosting app, used to pick a register. */
   private contextHint: string = '';
 
   onCreate(context: InputMethodExtensionContext): void {
     this.context = context;
+    try {
+      this.ability = inputMethodEngine.getInputMethodAbility();
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'getInputMethodAbility failed: %{public}s', error.message);
+      this.publishState(false, '', 'not an input method application');
+      return;
+    }
     // Built once per extension lifetime. A missing API key is not an error here:
     // the engine simply falls back to the offline path and says so.
     this.engine = BridgeEngineFactory.create(context);
@@ -60,21 +76,23 @@ export class KeyboardController {
     this.unregisterListeners();
     this.destroyPanel();
     this.context = undefined;
+    this.ability = undefined;
   }
 
   /** Create the soft keyboard panel and load our UI into it. */
   private createPanel(): void {
+    const ability: inputMethodEngine.InputMethodAbility | undefined = this.ability;
     const context: InputMethodExtensionContext | undefined = this.context;
-    if (context === undefined) {
+    if (ability === undefined || context === undefined) {
       return;
     }
 
-    const panelInfo: inputMethodEngine.PanelInfo = {
-      type: inputMethodEngine.PanelType.SOFT_KEYBOARD,
-      flag: inputMethodEngine.PanelFlag.FLG_FIXED
+    const panelInfo: PanelInfo = {
+      type: PanelType.SOFT_KEYBOARD,
+      flag: PanelFlag.FLAG_FIXED
     };
 
-    inputMethodAbility.createPanel(context, panelInfo)
+    ability.createPanel(context, panelInfo)
       .then((panel: inputMethodEngine.Panel): Promise<void> => {
         this.panel = panel;
         const info: display.Display = display.getDefaultDisplaySync();
@@ -101,11 +119,13 @@ export class KeyboardController {
   }
 
   private destroyPanel(): void {
+    const ability: inputMethodEngine.InputMethodAbility | undefined = this.ability;
     const panel: inputMethodEngine.Panel | undefined = this.panel;
-    if (panel === undefined) {
+    if (ability === undefined || panel === undefined) {
+      this.panel = undefined;
       return;
     }
-    inputMethodAbility.destroyPanel(panel)
+    ability.destroyPanel(panel)
       .then((): void => {
         hilog.info(DOMAIN, TAG, 'panel destroyed');
       })
@@ -116,7 +136,12 @@ export class KeyboardController {
   }
 
   private registerListeners(): void {
-    inputMethodAbility.on('inputStart',
+    const ability: inputMethodEngine.InputMethodAbility | undefined = this.ability;
+    if (ability === undefined) {
+      return;
+    }
+
+    ability.on('inputStart',
       (kbController: inputMethodEngine.KeyboardController,
         client: inputMethodEngine.InputClient): void => {
         this.inputClient = client;
@@ -125,11 +150,13 @@ export class KeyboardController {
         this.publishState(true, this.fieldText, 'editor attached');
       });
 
-    inputMethodAbility.on('inputStop', (): void => {
+    const stopCallback: () => void = (): void => {
       this.inputClient = undefined;
       hilog.info(DOMAIN, TAG, 'inputStop: editor detached');
       this.publishState(false, this.fieldText, 'editor detached');
-    });
+    };
+    this.inputStopCallback = stopCallback;
+    ability.on('inputStop', stopCallback);
 
     // EditorAttribute.bundleName (API 14+) tells us which application owns the
     // focused field. That is the contextual signal the prompt uses to match the
@@ -145,8 +172,16 @@ export class KeyboardController {
   }
 
   private unregisterListeners(): void {
-    inputMethodAbility.off('inputStart');
-    inputMethodAbility.off('inputStop');
+    const ability: inputMethodEngine.InputMethodAbility | undefined = this.ability;
+    if (ability !== undefined) {
+      ability.off('inputStart');
+      const stopCallback: (() => void) | undefined = this.inputStopCallback;
+      if (stopCallback !== undefined) {
+        ability.off('inputStop', stopCallback);
+        this.inputStopCallback = undefined;
+      }
+    }
+
     const delegate: inputMethodEngine.KeyboardDelegate | undefined = this.keyboardDelegate;
     if (delegate !== undefined) {
       delegate.off('editorAttributeChanged');
@@ -159,11 +194,13 @@ export class KeyboardController {
    *
    * NAMING TRAP, verified against two independent sources before relying on it:
    * "Forward" here means *before* the cursor and "Backward" means *after* it,
-   * which is the opposite of what the English names suggest. Both the English and
-   * Chinese reference say the same thing, and the official IME sample maps
-   * KEYCODE_DEL (backspace) to deleteForward(1) and KEYCODE_FORWARD_DEL to
-   * deleteBackward(1). Using the intuitive reading would have made the rewrite
-   * append text instead of replacing it.
+   * which is the opposite of what the English names suggest. The SDK's own
+   * declaration comments do not state the direction, so the evidence is the
+   * Chinese reference (the source of the English translation, which says the same
+   * thing) and the official IME sample, which maps KEYCODE_DEL — the backspace
+   * key — to deleteForward(1) and KEYCODE_FORWARD_DEL to deleteBackward(1).
+   * Using the intuitive reading would have made the rewrite append text instead
+   * of replacing it.
    */
   private refreshFieldText(): void {
     const client: inputMethodEngine.InputClient | undefined = this.inputClient;
@@ -304,13 +341,13 @@ export const keyboardController: KeyboardController = new KeyboardController();
 /**
  * Turn a bundle name into a register hint for the prompt.
  *
- * This is a small, honest heuristic, not a classifier. The documentation warns
- * that bundleName may be an empty string, so that case is handled explicitly, and
- * an unrecognised bundle is passed through rather than guessed at: a raw package
- * name is still a useful signal to the model, whereas a wrong friendly label
- * would not be.
+ * This is a small, honest heuristic, not a classifier. The declaration marks
+ * `bundleName` as optional and the documentation warns it may be an empty string,
+ * so both cases are handled explicitly, and an unrecognised bundle is passed
+ * through rather than guessed at: a raw package name is still a useful signal to
+ * the model, whereas a wrong friendly label would not be.
  */
-export function describeHost(bundleName: string): string {
+export function describeHost(bundleName: string | undefined): string {
   if (bundleName === undefined || bundleName.length === 0) {
     return '';
   }

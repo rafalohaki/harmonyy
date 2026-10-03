@@ -8,6 +8,11 @@
  *
  * The settings store itself lives in common/Settings.ets, because the input
  * method extension reads it too and must not import from a UI file.
+ *
+ * Verified against the API 23 declaration:
+ *   UIContext.getHostContext(): Context | undefined
+ * so the context is treated as possibly absent rather than assumed, and a missing
+ * context produces a visible message instead of a blank screen.
  */
 
 import type { common } from '@kit.AbilityKit';
@@ -22,23 +27,33 @@ struct Home {
   @State apiKey: string = '';
   @State saved: string = '';
 
-  private context(): common.UIAbilityContext {
-    return this.getUIContext().getHostContext() as common.UIAbilityContext;
+  private hostContext(): common.UIAbilityContext | undefined {
+    return this.getUIContext().getHostContext() as common.UIAbilityContext | undefined;
   }
 
   aboutToAppear(): void {
-    const loaded: BridgeSettings = BridgeSettings.read(this.context());
+    const context: common.UIAbilityContext | undefined = this.hostContext();
+    if (context === undefined) {
+      this.saved = 'No host context available; settings cannot be loaded.';
+      return;
+    }
+    const loaded: BridgeSettings = BridgeSettings.read(context);
     this.baseUrl = loaded.baseUrl;
     this.model = loaded.model;
     this.apiKey = loaded.apiKey;
   }
 
   private save(): void {
+    const context: common.UIAbilityContext | undefined = this.hostContext();
+    if (context === undefined) {
+      this.saved = 'No host context available; nothing was saved.';
+      return;
+    }
     const settings: BridgeSettings = new BridgeSettings();
     settings.baseUrl = this.baseUrl;
     settings.model = this.model;
     settings.apiKey = this.apiKey;
-    BridgeSettings.write(this.context(), settings);
+    BridgeSettings.write(context, settings);
     this.saved = 'Saved on this device only. Nothing is written to the repository.';
   }
 
