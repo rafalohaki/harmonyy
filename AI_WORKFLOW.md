@@ -256,3 +256,50 @@ demand, which is the branch the keyboard takes when the network drops.
 The first milestone is proving that a third-party input method can attach to another
 application's text field and write into it, because every other claim depends on that. The
 mode buttons state plainly that they are not the model yet.
+
+### Session 2 — the toolchain lands, and the code compiles
+
+**What the compiler caught that reading had not.** The project built successfully on the first
+attempt after the scaffold was in place, but not before ArkTS reported two things:
+
+1. `PanelInfo`, `PanelType` and `PanelFlag` are declared **twice** in the SDK — once in
+   `@ohos.inputMethod.Panel` and once inside the `inputMethodEngine` namespace — and the two are
+   not interchangeable. `createPanel` accepts only the engine's, and the two disagree on enum
+   spelling: the engine has `FLG_FIXED`, the Panel module has `FLAG_FIXED`. The error was a type
+   mismatch, not a missing symbol, which is why reading the declaration file had not revealed
+   it.
+2. The HTTP call needs `ohos.permission.INTERNET`, which ArkTS reports as a **warning at the
+   call site rather than an error**. Left alone it would have surfaced as a runtime network
+   failure with no obvious cause. It is now declared with a user-facing reason string.
+
+**The scaffold was the missing piece, and it corrected three assumptions.** Running
+`devecocli create` to obtain a reference project revealed that our hand-written configuration
+was wrong in ways that would each have produced a confusing build error: there was no
+`AppScope/app.json5` at all (the application-level manifest), no `hvigor/hvigor-config.json5`,
+and the runtime is `HarmonyOS` with version labels like `6.1.1(24)` rather than `OpenHarmony`
+with numeric API levels. The home action is also spelled `ohos.want.action.home`, not the older
+`action.system.home`. The scaffold was then grafted in and committed, so a clean checkout needs
+no scaffolding step.
+
+**Signing was solvable offline, contrary to the organisers' FAQ.** The FAQ states that
+`devecocli signature generate` does not work outside mainland China and that signing should be
+done through the DevEco Studio GUI, which would put a Huawei account and a manual GUI step on
+the critical path. The Full SDK contains the complete development identity instead —
+`hap-sign-tool.jar`, `OpenHarmony.p12`, the profile-signing certificate and the profile
+template — so `scripts/sign-hap.sh` signs locally. The recipe mirrors the organisers'
+system-app helper rather than inventing crypto, with one deliberate difference: the helper
+forces `app-feature: hos_system_app`, while the SDK's own template already says
+`hos_normal_app` with `apl: normal`, which is what this submission actually is.
+
+**A failure whose error message pointed nowhere.** `sign-app` failed with
+`Illegal base64 character 20`. `0x20` is a space, and there is no space in any base64 field. The
+real cause was a missing **trailing newline** on the `distribution-certificate` PEM in the
+profile: the organisers' helper appends one and we had not. The difference was found by
+comparing our generated profile against the known-good helper line by line rather than by
+reasoning about base64. Recorded in the script so nobody re-derives it.
+
+**Method that made this fast.** Once the SDK was on disk, its `ets/api/**.d.ts` files became the
+authoritative reference for the exact targeted version — better than the documentation, and far
+better than recollection. Every platform call was checked against them before being written,
+which is what turned a hypothetical multi-hour debugging session into two compiler errors that
+each took minutes to fix.
