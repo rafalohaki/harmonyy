@@ -7,8 +7,9 @@
  *   - panel.resize(w, h) and panel.setUiContent('inputmethod/pages/Index')
  *   - inputMethodAbility.on('inputStart', (kbController, inputClient) => ...)
  *   - inputMethodAbility.on('inputStop', () => ...)
- *   - InputClient: insertTextSync / deleteBackwardSync / getTextIndexAtCursorSync
- *     / getBackwardSync, reached through the InputMethodEngine
+ *   - InputClient: insertTextSync / getTextIndexAtCursorSync / getForwardSync /
+ *     deleteForwardSync, reached through the InputMethodEngine. Note that
+ *     "Forward" means before the cursor here; see the naming trap below.
  *
  * SCOPE NOTE: this file deliberately contains no AI or engine code. The first
  * milestone is proving that a third-party input method can attach to another

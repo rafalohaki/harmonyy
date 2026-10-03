@@ -126,6 +126,16 @@ scripts/fetch-public-sdk.sh          # download + verify the checksum
 > wrong. The placement instructions are added once the archive is downloaded and its real
 > structure is known.
 
+**Measured throughput, which is why this path is worth preferring.** Downloading both archives
+simultaneously on the same connection, the public mirror sustained **1.47 MB/s** while Huawei's
+developer download portal for DevEco Studio sustained **0.20 MB/s** — roughly seven times
+faster. For a 1.2 GB SDK that is the difference between eleven minutes and over an hour and a
+half. The mirror is also not rate-limited per account, has no login, and publishes checksums.
+
+That comparison matters for planning the rest of the setup, because the emulator system image
+is several gigabytes and comes from the slower portal. It is the largest single item on the
+critical path.
+
 Also on the mirror and potentially useful: `develop_tools/hapsigntoolv2.jar` and
 `develop_tools/hmos_app_packing_tool.jar` (HAP signing and packing tools), plus
 `develop_tools/previewer/`.
