@@ -121,10 +121,80 @@ scripts/fetch-public-sdk.sh          # download + verify the checksum
 # extraction and placement are documented after the archive layout is inspected
 ```
 
-> The archive layout has **not** been inspected yet, so this document does not claim where the
-> extracted directories must be placed. Guessing that is exactly how a setup document becomes
-> wrong. The placement instructions are added once the archive is downloaded and its real
-> structure is known.
+> **The archive has now been downloaded, verified and inspected.** Its real layout is recorded
+> below, because it is not what the name suggests: it is a container of five nested component
+> archives, not a ready-to-use SDK directory.
+
+#### What the archive actually contains (verified)
+
+`L2-SDK-MAC-M1-PUBLIC.tar.gz` extracts to a single path, `sdk/packages/ohos-sdk/darwin/`,
+holding five nested ZIPs:
+
+| Nested archive | Size | Contents after extraction |
+| --- | --- | --- |
+| `native-darwin-arm64-6.1.0.31-Release.zip` | 891 MB | NDK: C/C++ headers, libraries, toolchain |
+| `previewer-darwin-arm64-6.1.0.31-Release.zip` | 210 MB | the UI Previewer |
+| `ets-darwin-arm64-6.1.0.31-Release.zip` | 69 MB | ArkTS API declarations, `ets-loader`, `kits`, `component` |
+| `js-darwin-arm64-6.1.0.31-Release.zip` | 56 MB | JS API declarations and `ace-loader` |
+| `toolchains-darwin-arm64-6.1.0.31-Release.zip` | 22 MB | `hdc`, `restool`, `idl`, `ark_disasm`, `lib/` |
+
+Extracting all five produces the component root, **3.9 GB** in total:
+
+```
+ets/        api/  arkts/  build-tools/ets-loader/  component/  kits/
+js/         api/  build-tools/ace-loader/
+native/     NDK headers, libraries and toolchain
+previewer/  the Previewer
+toolchains/ hdc  restool  idl  ark_disasm  lib/  ...
+```
+
+Each component carries an `oh-uni-package.json` that states its own identity, which is how the
+toolchain discovers it. Verified values:
+
+```json
+{ "apiVersion": "23", "displayName": "Ets", "path": "ets",
+  "releaseType": "Release", "version": "6.1.0.31" }
+```
+
+`apiVersion: "23"` matches this project's `compileSdkVersion: 23` exactly. The ArkTS compiler is
+present for this host architecture at
+`ets/build-tools/ets-loader/bin/ark/build-mac/bin/es2abc`.
+
+#### Two things this SDK removes, and the one thing it does not
+
+`toolchains/lib/` in the Full SDK contains the **complete offline signing material**:
+
+```
+hap-sign-tool.jar
+OpenHarmony.p12
+OpenHarmonyProfileRelease.pem
+OpenHarmonyProfileDebug.pem
+UnsgnedReleasedProfileTemplate.json
+UnsgnedDebugProfileTemplate.json
+```
+
+That matters, because `devecocli signature generate` is documented as region-restricted outside
+mainland China and the organisers' answer is to sign through the DevEco Studio GUI. With the
+Full SDK there is a third option that needs **no Huawei account and no GUI**: sign the `.hap`
+offline with the SDK's public development material. The required HAP deliverable therefore does
+not depend on account services. `toolchains/hdc` is also present, so device communication does
+not require the IDE either.
+
+What the SDK does **not** contain is the build orchestrator (`hvigor`), the package manager
+(`ohpm`), or the emulator. The first two come with Command Line Tools or DevEco Studio; the
+emulator comes only with DevEco Studio, and that is the reason Studio is still required.
+
+#### Placement
+
+The component root is the directory that directly contains `ets/`, `js/`, `native/`,
+`previewer/` and `toolchains/`. DevEco Studio and hvigor resolve an SDK from a configured root
+(for example through `DEVECO_SDK_HOME`), and the organisers' documentation describes a known
+shape of `<parent>/sdk/default/openharmony/{ets,js,...}`.
+
+**This placement is not claimed as verified.** The authoritative answer is one minute of
+checking: once DevEco Studio is installed, look at the directory its SDK Manager creates and
+compare. That is deliberately left as an empirical step rather than a guess, because a wrong
+SDK path produces a confusing build error rather than an honest one.
 
 **Measured throughput, which is why this path is worth preferring.** Downloading both archives
 simultaneously on the same connection, the public mirror sustained **1.47 MB/s** while Huawei's
