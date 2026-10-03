@@ -73,10 +73,16 @@ deliberate scope decision: it removes the largest schedule risk from a sub-24-ho
 
 ```
 core/       Platform-agnostic rewrite engine (ArkTS-compatible TypeScript) + tests
-app/        The ArkTS/ArkUI application and the input method extension (added after SDK install)
-scripts/    Toolchain setup, IME enablement, dev loop
-docs/       Architecture and AI integration documentation
+app/        The ArkTS/ArkUI application and the input method extension
+scripts/    Toolchain setup, IME enablement, dev loop, checks
+docs/       Architecture, AI integration, environment, demo plan, decision log
+dist/       The signed .hap, ready to install
 ```
+
+Start with **[`docs/DECISIONS.md`](docs/DECISIONS.md)**: it is the ledger of the decisions this
+project follows, written as checkable statements rather than prose. Every pull request is
+reviewed against it by [Prelint](https://prelint.com), so a change that drifts from a decision
+gets caught before it merges rather than after.
 
 ## Required deliverables, and where they live
 
@@ -131,7 +137,7 @@ to `offline: The model service could not be reached.` with a usable offline resu
 
 | Stage | State |
 | --- | --- |
-| Rewrite engine core + unit tests | **done** — 84 tests pass, strict `tsc --noEmit` clean |
+| Rewrite engine core + unit tests | **done** — 92 tests pass, strict `tsc --noEmit` clean |
 | Toolchain | **done** — DevEco Studio 6.1.1.280, Full SDK verified by checksum, emulator image installed |
 | ArkTS application | **compiles** — `BUILD SUCCESSFUL` |
 | Signing | **done offline** with the SDK's development identity; `app-feature: hos_normal_app` |
