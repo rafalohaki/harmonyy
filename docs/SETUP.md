@@ -203,15 +203,18 @@ Run these in order; each one is cheap and each failure is unambiguous.
 | 1 | `node --version` | v22 or later |
 | 2 | `node --test core/test/` | 84 tests pass |
 | 3 | `node scripts/check-refs.mjs` | all checks pass |
-| 4 | `scripts/setup-toolchain.sh` | `devecocli` 1.3.4 and DevEco Studio found |
-| 5 | `devecocli device list` | the emulator appears |
-| 6 | `scripts/dev-loop.sh build` | `BUILD SUCCESSFUL` and a `.hap` on disk |
-| 7 | `scripts/dev-loop.sh run` | the app installs and launches |
-| 8 | `scripts/enable-ime.sh --status` | Bridge listed and current |
-| 9 | `scripts/dev-loop.sh logs` | `inputStart: editor attached` |
+| 4 | `node scripts/try-engine.mjs --mock` | remote answers, redaction counted, offline fallback shown |
+| 5 | `scripts/setup-toolchain.sh` | `devecocli` 1.3.4 and DevEco Studio found |
+| 6 | `devecocli device list` | the emulator appears |
+| 7 | `scripts/dev-loop.sh build` | `BUILD SUCCESSFUL` and a `.hap` on disk |
+| 8 | `scripts/dev-loop.sh run` | the app installs and launches |
+| 9 | `scripts/enable-ime.sh --status` | Bridge listed and current |
+| 10 | `scripts/dev-loop.sh logs` | `inputStart: editor attached` |
 
-Step 9 is the real milestone: it means the keyboard is attached to another application's text
+Step 10 is the real milestone: it means the keyboard is attached to another application's text
 field, which is the claim the whole submission rests on.
+
+Steps 1 to 4 need no SDK and no device, so they can be run on a clean checkout immediately.
 
 ---
 

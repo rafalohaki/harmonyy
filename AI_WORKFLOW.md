@@ -220,6 +220,15 @@ hide, so both directions were moved into `core/src/openai.ts` as pure functions 
 missing message, null message, non-string content, empty content, and extra fields). The
 transport now contains no protocol logic at all.
 
+**A tool built so the AI could be judged before the device existed.** `scripts/try-engine.mjs`
+drives the shipped engine from the terminal. With `--mock` it starts a local OpenAI-shaped
+server, so the whole HTTP path — request serialisation, redaction, placeholder restoration,
+strict parsing — is exercised with no credentials and no network; without the flag it calls the
+configured real endpoint. This mattered because the engine's usefulness depends on how a real
+model answers our prompt, and discovering a bad prompt only after a working `.hap` exists is the
+most expensive possible order of operations. It also demonstrated the degradation path on
+demand, which is the branch the keyboard takes when the network drops.
+
 **Milestone framing.** The ArkTS skeleton deliberately contains no engine wiring at first.
 The first milestone is proving that a third-party input method can attach to another
 application's text field and write into it, because every other claim depends on that. The

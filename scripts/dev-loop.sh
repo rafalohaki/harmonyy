@@ -6,6 +6,7 @@
 # Usage:
 #   scripts/dev-loop.sh tests                 # engine tests + reference checks (no SDK needed)
 #   scripts/dev-loop.sh refs                  # static import/resource check only
+#   scripts/dev-loop.sh engine                # exercise the engine, mock model, no credentials
 #   scripts/dev-loop.sh lint                  # ArkTS static checks
 #   scripts/dev-loop.sh build                 # produce the .hap
 #   scripts/dev-loop.sh run                   # build, install and launch
@@ -46,6 +47,11 @@ case "$cmd" in
   refs)
     echo "== static reference check =="
     node "$BRIDGE_REPO_ROOT/scripts/check-refs.mjs"
+    ;;
+
+  engine)
+    echo "== engine playground (mock model, no credentials) =="
+    node "$BRIDGE_REPO_ROOT/scripts/try-engine.mjs" --mock
     ;;
 
   lint)

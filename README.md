@@ -126,17 +126,25 @@ scripts/create-emulator.sh
 # 4. Engine tests - these need no SDK at all
 scripts/dev-loop.sh tests
 
-# 5. Build, then install and launch
+# 5. Exercise the engine end to end against a local mock model, or your real one
+scripts/dev-loop.sh engine
+BRIDGE_API_KEY=sk-... node scripts/try-engine.mjs
+
+# 6. Build, then install and launch
 scripts/dev-loop.sh build
 scripts/dev-loop.sh run
 
-# 6. Enable and switch to the Bridge keyboard
+# 7. Enable and switch to the Bridge keyboard
 scripts/enable-ime.sh <bundle-name>
 scripts/enable-ime.sh --status
 
-# 7. Capture evidence from the emulator
+# 8. Capture evidence from the emulator
 scripts/dev-loop.sh shot rewrite-demo
 ```
+
+`scripts/try-engine.mjs` reuses the exact shipped core, so what it prints is what the keyboard
+will show. It is how the prompt was validated before any device existed, and step 3 of
+[`docs/SETUP.md`](docs/SETUP.md#step-6--verification-checklist) relies on it.
 
 The engine is the single source of truth and is copied into the ArkTS module by
 `scripts/sync-core.sh`; never edit the copies under `app/entry/src/main/ets/core/`.
