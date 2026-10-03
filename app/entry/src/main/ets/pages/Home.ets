@@ -33,6 +33,8 @@ struct Home {
   @State saved: string = '';
   /** Scratchpad so the keyboard can be tried without leaving the app. */
   @State draft: string = '';
+  /** When on, the keyboard never contacts the network at all. */
+  @State offlineOnly: boolean = false;
   /** The directory this ability resolved preferences to; compared against the
    *  keyboard's own, which is shown in its status line. */
   @State preferencesDir: string = '';
@@ -47,6 +49,7 @@ struct Home {
     settings.baseUrl = this.baseUrl;
     settings.model = this.model;
     settings.apiKey = this.apiKey;
+    settings.offlineOnly = this.offlineOnly;
     publishSettings(settings);
   }
 
@@ -72,6 +75,7 @@ struct Home {
     this.baseUrl = loaded.baseUrl;
     this.model = loaded.model;
     this.apiKey = loaded.apiKey;
+    this.offlineOnly = loaded.offlineOnly;
     this.preferencesDir = context.preferencesDir;
     this.keyboardSeenAt = BridgeSettings.readSeenAt(context);
     // Send what we have, and answer future requests from the keyboard.
@@ -106,6 +110,7 @@ struct Home {
     settings.baseUrl = this.baseUrl;
     settings.model = this.model;
     settings.apiKey = this.apiKey;
+    settings.offlineOnly = this.offlineOnly;
     BridgeSettings.write(context, settings);
     this.saved = 'Saved on this device only. Nothing is written to the repository.';
     // Push it to the keyboard as well: it cannot read this store. See SettingsBus.
@@ -159,6 +164,16 @@ struct Home {
       Button('Save')
         .width('100%')
         .onClick(() => this.save())
+
+      Row({ space: 8 }) {
+        Text('Offline only — never contact the network')
+          .fontSize(13)
+          .fontColor('#1A1A1A')
+          .layoutWeight(1)
+        Toggle({ type: ToggleType.Switch, isOn: this.offlineOnly })
+          .onChange((isOn: boolean) => { this.offlineOnly = isOn; })
+      }
+      .width('100%')
 
       Text('Try it here')
         .fontSize(13)

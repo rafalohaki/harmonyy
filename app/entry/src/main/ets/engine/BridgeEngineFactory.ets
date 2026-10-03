@@ -67,7 +67,16 @@ export class BridgeEngineFactory {
   static fromSettings(settings: BridgeSettings): EngineBuild {
     const transport: ArkHttpTransport = new ArkHttpTransport(
       settings.baseUrl, settings.model, settings.apiKey);
-    const options: EngineOptions = DEFAULT_OPTIONS;
+    const options: EngineOptions = {
+      timeoutMs: DEFAULT_OPTIONS.timeoutMs,
+      maxAttempts: DEFAULT_OPTIONS.maxAttempts,
+      limits: DEFAULT_OPTIONS.limits,
+      redactionEnabled: DEFAULT_OPTIONS.redactionEnabled,
+      // A user-facing promise: with this on, the engine returns before it can
+      // construct a request, so no network call is possible even if the endpoint
+      // and the key are both configured.
+      forceOffline: settings.offlineOnly
+    };
     const engine: RewriteEngine = new RewriteEngine(transport, options, BridgeEngineFactory.clock);
     return new EngineBuild(engine, settings.isConfigured(), settings.readOk, settings.baseUrl,
       settings.preferencesDir);

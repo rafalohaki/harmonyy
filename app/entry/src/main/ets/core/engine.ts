@@ -28,6 +28,16 @@ export interface EngineOptions {
   maxAttempts: number;
   limits: ParseLimits;
   redactionEnabled: boolean;
+  /**
+   * Skip the remote attempt entirely.
+   *
+   * This is a user-facing promise, not an optimisation: with it on, the rewrite
+   * never contacts the network at all, so a user who cannot accept sending even
+   * scrubbed text anywhere can still use the product. Because nothing leaves the
+   * device, nothing needs to be withheld either, which is why the outcome reports
+   * zero hidden items rather than a misleading count.
+   */
+  forceOffline: boolean;
 }
 
 export const DEFAULT_OPTIONS: EngineOptions = {
@@ -35,6 +45,7 @@ export const DEFAULT_OPTIONS: EngineOptions = {
   maxAttempts: 2,
   limits: DEFAULT_LIMITS,
   redactionEnabled: true,
+  forceOffline: false,
 };
 
 /** Clock indirection so latency can be asserted in tests. */
@@ -86,6 +97,19 @@ export class RewriteEngine {
     let redactedCount: number = 0;
     let map: PlaceholderEntry[] = [];
     let outgoing: string = request.text;
+
+    if (this.options.forceOffline) {
+      // Nothing will be sent, so nothing is scrubbed and nothing is reported as
+      // withheld. Returning early also means the transport is never constructed,
+      // which is what makes the promise checkable rather than merely stated.
+      return {
+        variants: localVariants(request),
+        source: 'local',
+        fallbackReason: 'Offline-only mode is on.',
+        redactedCount: 0,
+        latencyMs: 0,
+      };
+    }
 
     if (this.options.redactionEnabled) {
       const redaction = this.redactor.redact(request.text);
