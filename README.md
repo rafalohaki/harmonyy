@@ -82,24 +82,55 @@ progresses — reproducibility is a judged criterion and the easiest one to lose
 
 | Stage | State |
 | --- | --- |
-| Rewrite engine core + unit tests | implemented, tested with Node |
-| Toolchain (DevEco Studio / SDK / emulator) | **blocked on a manual Huawei download** |
-| ArkTS input method extension | not started |
-| `.hap` on the emulator | not yet |
+| Rewrite engine core + unit tests | **done** — 58 tests pass, strict `tsc --noEmit` clean |
+| Toolchain (DevEco Studio / SDK / emulator) | installer downloading; this is the critical path |
+| ArkTS input method skeleton | written, **not yet compiled** (needs the SDK) |
+| `.hap` on the emulator | not yet — the next milestone |
 | Demo recording | not yet |
+
+The first milestone is not the AI. It is proving that a third-party input method
+can attach to another application's text field and write into it, because every
+other claim in this README depends on that. It is isolated in
+[`KeyboardController.ets`](app/entry/src/main/ets/inputmethod/KeyboardController.ets)
+and the mode buttons in the keyboard deliberately say that they are not the model
+yet. See the go/no-go gate in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Build and run
 
-Not yet reproducible — this section is filled in as each step lands. The intended path is:
+Reproducible from a clean checkout once DevEco Studio is installed:
 
-1. Install DevEco Studio (macOS, Apple Silicon) and complete its first-launch setup.
-2. `scripts/setup-toolchain.sh` — installs `devecocli`, switches the DevEco region to `CN`
-   (without this the emulator only offers a watch profile), and prepares a phone emulator.
-3. `devecocli build` in `app/`, then `devecocli run`.
-4. `scripts/enable-ime.sh` — enables and switches to the Bridge keyboard.
+```bash
+# 1. DevEco CLI, and a report of what is still missing
+scripts/setup-toolchain.sh
 
-Details, exact versions and the current reality of each step are in
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+# 2. Region switch to CN (once, with DevEco Studio closed).
+#    Without it the emulator only offers a watch profile.
+scripts/set-devco-region-cn.sh
+
+# 3. A phone emulator. The system image is several gigabytes.
+scripts/create-emulator.sh
+
+# 4. Engine tests - these need no SDK at all
+scripts/dev-loop.sh tests
+
+# 5. Build, then install and launch
+scripts/dev-loop.sh build
+scripts/dev-loop.sh run
+
+# 6. Enable and switch to the Bridge keyboard
+scripts/enable-ime.sh <bundle-name>
+scripts/enable-ime.sh --status
+
+# 7. Capture evidence from the emulator
+scripts/dev-loop.sh shot rewrite-demo
+```
+
+The engine is the single source of truth and is copied into the ArkTS module by
+`scripts/sync-core.sh`; never edit the copies under `app/entry/src/main/ets/core/`.
+
+Exact versions this was verified against: Node.js 26.9.0, npm 11.19.1,
+`@deveco/deveco-cli` 1.3.4, DevEco Studio for macOS (Apple Silicon).
+
 
 ## Running the engine tests
 
