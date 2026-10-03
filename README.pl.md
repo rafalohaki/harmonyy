@@ -102,7 +102,7 @@ wychwycona przed scaleniem, a nie po nim.
 | 1 | Publiczne repozytorium kodu źródłowego | to repozytorium | gotowe |
 | 2 | Odtwarzalne instrukcje konfiguracji, budowania, instalacji i uruchamiania | [Budowanie i uruchamianie](#build-and-run), [`scripts/`](scripts) | gotowe w zakresie kroków łańcucha narzędzi; zweryfikowane do granicy SDK |
 | 3 | Działający pakiet `.hap` | [`dist/bridge-1.0.0-signed.hap`](dist/bridge-1.0.0-signed.hap), wytworzony przez `scripts/dev-loop.sh build` + `scripts/sign-hap.sh` | **zbudowany, podpisany i zainstalowany na emulatorze** jako zwykła aplikacja |
-| 4 | Krótka nagrana demonstracja | [`demo/`](demo) — kompozycja Remotion nad zcommitowanymi klatkami z urządzenia; renderuje się do `demo/out/bridge-demo.mp4`; storyboard w [`docs/DEMO.md`](docs/DEMO.md) | **nagrano** — 81 s z dwunastu klatek zrobionych na urządzeniu |
+| 4 | Krótka nagrana demonstracja | [`demo/out/bridge-demo.mp4`](demo/out/bridge-demo.mp4) — w repozytorium, odtwarza się prosto z GitHuba; kompozycja Remotion renderuje ją od nowa ze zcommitowanych klatek; storyboard w [`docs/DEMO.md`](docs/DEMO.md) | **nagrano** — 81 s z dwunastu klatek zrobionych na urządzeniu |
 | 5 | Opis architektury i implementacji | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | gotowy |
 | 6 | `AI_WORKFLOW.md` | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) | gotowy, aktualizowany w miarę postępów prac |
 | 7 | Dokumentacja integracji z AI | [`docs/AI_INTEGRATION.md`](docs/AI_INTEGRATION.md) | gotowa |
@@ -170,7 +170,7 @@ więc pojawia się w polach tekstowych należących do innych aplikacji.
 | Oczyszczanie danych osobowych, udokumentowane na urządzeniu | **gotowe** — `2 hidden`, a wartości przywrócone w wariantach |
 | Działanie offline w razie awarii, udokumentowane na urządzeniu | **gotowe** — nieosiągalny punkt końcowy zwrócił `offline: The model service could not be reached.` oraz użyteczny wynik offline |
 | Tryb Compose (pasek pojęć) | **gotowe** — trzy dotknięcia pojęć utworzyły poprawne gramatycznie zdanie po polsku, zastosowane w polu |
-| Nagranie demonstracji | **gotowe** — `demo/out/bridge-demo.mp4`, 81 s, wyrenderowane z dwunastu klatek zrobionych na urządzeniu |
+| Nagranie demonstracji | **gotowe** — [`demo/out/bridge-demo.mp4`](demo/out/bridge-demo.mp4), 81 s, w repozytorium |
 
 Pierwszym kamieniem milowym nie jest AI. Jest nim dowód, że metoda wprowadzania
 firmy trzeciej potrafi podłączyć się do pola tekstowego innej aplikacji i w nim

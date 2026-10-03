@@ -77,4 +77,7 @@ app/.signing/
 # scripts/capture-demo-stills.sh, so only the composition and the finished video
 # belong in git.
 demo/node_modules/
-demo/out/
+demo/out/*
+# ...except the finished video, which is a required deliverable and belongs in the
+# repository so a judge can watch it without rendering anything first.
+!demo/out/bridge-demo.mp4

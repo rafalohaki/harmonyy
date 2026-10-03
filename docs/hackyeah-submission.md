@@ -108,8 +108,10 @@ Leave **Looking for team members** selected if that is still true. Skills to tic
 
 File to upload: `demo/out/bridge-demo.mp4` — 81 s, 1920×1080, 30 fps, ~30 MB.
 Upload it to YouTube as **Listed** (or public) and paste the link into the form field.
-The storyboard it was rendered from is in [`DEMO.md`](DEMO.md); every frame is a real
-device capture, and the closing card says so.
+The same video is **committed to the repository** at
+[`demo/out/bridge-demo.mp4`](../demo/out/bridge-demo.mp4), so a juror can also watch it
+straight from GitHub without YouTube. The storyboard it was rendered from is in
+[`DEMO.md`](DEMO.md); every frame is a real device capture, and the closing card says so.
 
 ## Cover image
 

@@ -93,7 +93,7 @@ gets caught before it merges rather than after.
 | 1 | Public source code repository | this repository | ready |
 | 2 | Reproducible setup, build, install and launch instructions | [Build and run](#build-and-run), [`scripts/`](scripts) | ready for the toolchain steps; verified up to the SDK boundary |
 | 3 | A working `.hap` package | [`dist/bridge-1.0.0-signed.hap`](dist/bridge-1.0.0-signed.hap), produced by `scripts/dev-loop.sh build` + `scripts/sign-hap.sh` | **built, signed and installed on the emulator** as an ordinary app |
-| 4 | A brief recorded demonstration | [`demo/`](demo) — Remotion composition over committed on-device stills; renders to `demo/out/bridge-demo.mp4`; storyboard in [`docs/DEMO.md`](docs/DEMO.md) | **recorded** — 81 s from twelve stills captured on-device |
+| 4 | A brief recorded demonstration | [`demo/out/bridge-demo.mp4`](demo/out/bridge-demo.mp4) — committed, plays straight from GitHub; the Remotion composition re-renders it from the committed stills; storyboard in [`docs/DEMO.md`](docs/DEMO.md) | **recorded** — 81 s from twelve stills captured on-device |
 | 5 | Architecture and implementation description | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | ready |
 | 6 | `AI_WORKFLOW.md` | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) | ready, updated as work proceeds |
 | 7 | AI integration documentation | [`docs/AI_INTEGRATION.md`](docs/AI_INTEGRATION.md) | ready |
@@ -159,7 +159,7 @@ fields that belong to other apps.
 | Personal-data scrubbing, evidenced on the device | **done** — `2 hidden`, and the values restored in the variants |
 | Offline fallback on failure, evidenced on the device | **done** — an unreachable endpoint produced `offline: The model service could not be reached.` and a usable offline result |
 | Compose mode (concept strip) | **done** — three concept taps produced a grammatical Polish sentence, applied to the field |
-| Demo recording | **done** — `demo/out/bridge-demo.mp4`, 81 s, rendered from twelve on-device stills with Remotion |
+| Demo recording | **done** — [`demo/out/bridge-demo.mp4`](demo/out/bridge-demo.mp4), 81 s, committed in the repository |
 
 The first milestone is not the AI. It is proving that a third-party input method
 can attach to another application's text field and write into it, because every
