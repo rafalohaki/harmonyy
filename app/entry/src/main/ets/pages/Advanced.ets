@@ -197,7 +197,7 @@ struct Advanced {
         Blank().height(24)
       }
       .width('100%')
-      .padding(20)
+      .padding({ top: 56, left: 20, right: 20, bottom: 20 })
       .alignItems(HorizontalAlign.Start)
     }
     .width('100%')

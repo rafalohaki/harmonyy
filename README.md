@@ -105,10 +105,10 @@ Not a mock-up. Captured on a HarmonyOS 6.1.1(24) phone emulator; screenshots are
 
 ```
 field text : ja chciec jutro przyjsc na spotkanie o 10
-status line: Rewritten by the model in 1.5 s — nothing personal left this device
-variants   : minimal  Ja chcę przyjść jutro na spotkanie o 10.
-             natural  Jutro chcę przyjść na spotkanie o 10.
-             stylish  Jutro przyjdę na spotkanie o 10.
+status line: Rewritten by the model in 1.7 s — nothing personal left this device
+variants   : najbardziej wierny      Ja chcę przyjść jutro na spotkanie o 10.
+             średni                  Chcę przyjść jutro na spotkanie o 10.
+             najbardziej naturalny   Przyjdę jutro na spotkanie o 10.
 after a tap: the field contains the corrected sentence
              status line: replaced 41 characters
 ```
@@ -121,10 +121,10 @@ characters before the cursor were removed and the replacement landed in their pl
 
 ```
 picked     : jeść, później, rodzina
-status line: Rewritten by the model in 1.1 s — nothing personal left this device
+status line: Rewritten by the model in 1.4 s — nothing personal left this device
 variants   : faithful  Zjem później z rodziną.
-             natural   Będę jeść później z rodziną.
-             expanded  Zamierzam później jeść z rodziną.
+             natural   Zamierzam jeść później z rodziną.
+             expanded  Zamierzam zjeść później razem z rodziną.
 after a tap: the field contains "Zjem później z rodziną."
 ```
 
