@@ -36,8 +36,10 @@ export interface EngineOptions {
    * scrubbed text anywhere can still use the product. Because nothing leaves the
    * device, nothing needs to be withheld either, which is why the outcome reports
    * zero hidden items rather than a misleading count.
+   *
+   * Optional so that existing construction sites keep compiling unchanged.
    */
-  forceOffline: boolean;
+  forceOffline?: boolean;
 }
 
 export const DEFAULT_OPTIONS: EngineOptions = {
@@ -98,7 +100,7 @@ export class RewriteEngine {
     let map: PlaceholderEntry[] = [];
     let outgoing: string = request.text;
 
-    if (this.options.forceOffline) {
+    if (this.options.forceOffline === true) {
       // Nothing will be sent, so nothing is scrubbed and nothing is reported as
       // withheld. Returning early also means the transport is never constructed,
       // which is what makes the promise checkable rather than merely stated.
