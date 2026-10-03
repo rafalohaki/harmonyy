@@ -76,6 +76,18 @@ scripts/    Toolchain setup, IME enablement, dev loop
 docs/       Architecture and AI integration documentation
 ```
 
+## Required deliverables, and where they live
+
+| # | Deliverable | Location | State |
+| --- | --- | --- | --- |
+| 1 | Public source code repository | this repository | ready |
+| 2 | Reproducible setup, build, install and launch instructions | [Build and run](#build-and-run), [`scripts/`](scripts) | ready for the toolchain steps; verified up to the SDK boundary |
+| 3 | A working `.hap` package | produced by `scripts/dev-loop.sh build` | **not yet** — blocked on the DevEco download |
+| 4 | A brief recorded demonstration | plan and shot list in [`docs/DEMO.md`](docs/DEMO.md) | plan ready, not yet recorded |
+| 5 | Architecture and implementation description | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | ready |
+| 6 | `AI_WORKFLOW.md` | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) | ready, updated as work proceeds |
+| 7 | AI integration documentation | [`docs/AI_INTEGRATION.md`](docs/AI_INTEGRATION.md) | ready |
+
 ## Status
 
 Work in progress, built during the hackathon window. This README is updated as the build

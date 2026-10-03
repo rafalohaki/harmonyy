@@ -1,0 +1,3 @@
+Emulator screenshots captured by `scripts/dev-loop.sh shot <name>` land here.
+They are the reproducible half of the demo evidence: the video shows the
+interaction, these prove the state without trusting a recording.
