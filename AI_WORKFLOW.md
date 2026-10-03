@@ -303,3 +303,50 @@ authoritative reference for the exact targeted version — better than the docum
 better than recollection. Every platform call was checked against them before being written,
 which is what turned a hypothetical multi-hour debugging session into two compiler errors that
 each took minutes to fix.
+
+### Session 3 — on the device, where the real bugs were
+
+Once DevEco Studio was installed the inner loop became cheap: build about a second, offline sign
+about two seconds, install a few seconds, then drive the emulator through `devecocli ui`. That
+loop turned three assumptions into three findings, none of which were visible by reading code.
+
+**The gate passed, both halves.** The keyboard enabled and became the active input method, the
+panel appeared at exactly 34% of the display height (our own ratio, so our code created it), it
+rendered our ArkUI page, it read the hosting field's existing text, and it wrote into that field
+from another process. Screenshots are in `docs/evidence/`.
+
+**Finding 1: the engine was built once.** It was constructed in `onCreate` and therefore cached
+whatever the API key was at extension start, so a user who configured the keyboard afterwards
+silently got the offline path. It is now built per rewrite. No unit test could have found this:
+it is a lifecycle fact about the platform, not a property of the engine.
+
+**Finding 2: the extension does not share the app's preferences store.** The input method
+extension and the settings UIAbility are in the same bundle, run under the same UID, and both
+report the same preferences directory — and they do not share its contents. This was settled by
+experiment, not argument: the keyboard was made to write a marker into the store, the ability was
+force-stopped and cold-started, and it read nothing. Every file-based channel across that
+boundary therefore fails **silently**, which is the worst failure mode available because it is
+indistinguishable from "not configured yet". The configuration now crosses explicitly as a
+common event, with the keyboard requesting it on start.
+
+**Finding 3, about method rather than code.** Two UI-automation taps missed because their
+coordinates were read off a screenshot, which is displayed scaled. The authoritative source for
+node bounds is `devecocli ui layout`. After that change every automation step landed first time.
+
+**A defensive catch that hid a real failure.** `BridgeSettings.read` swallowed store errors and
+fell back to defaults, so an unreadable store was reported to the user as "no API key set". The
+two are now distinguished in the data model and in the message the keyboard shows. This is the
+same rule as the design's honest-degradation principle: a degraded path must say *which*
+degradation it is.
+
+**A false alarm worth admitting.** A shell check for a leaked key was written as
+`if git grep -l PATTERN | head -5`, which tests `head`'s exit status and therefore reports a leak
+every time. It printed "LEAK FOUND" with no match at all. The check was rewritten with
+`git grep -q`, and then made permanent as `scripts/check-secrets.sh` so that the safety of the
+public repository does not depend on a human remembering to look.
+
+**The end-to-end result.** Broken Polish in a system text field produced three labelled Polish
+variants from a real model in 1233 ms, and tapping one replaced the field contents —
+`replaced 41 characters`. Polish conjugation and diacritics came back correct. That last status
+line is also the sharpest available proof that the cursor API is used the right way round:
+`deleteForwardSync(41)` removed exactly the 41 characters that preceded the cursor.

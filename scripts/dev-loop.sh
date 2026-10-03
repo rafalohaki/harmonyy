@@ -42,6 +42,13 @@ case "$cmd" in
     echo
     echo "== static reference check =="
     node "$BRIDGE_REPO_ROOT/scripts/check-refs.mjs"
+    echo
+    echo "== secret check =="
+    bash "$BRIDGE_REPO_ROOT/scripts/check-secrets.sh"
+    ;;
+
+  secrets)
+    bash "$BRIDGE_REPO_ROOT/scripts/check-secrets.sh"
     ;;
 
   refs)

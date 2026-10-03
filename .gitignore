@@ -40,6 +40,10 @@ signature/
 *.hsp
 *.hap
 
+# ...except the signed artefact, which is a required deliverable and belongs in the
+# repository so a judge can install it without building anything first.
+!dist/*.hap
+
 # ---------------------------------------------------------------------------
 # Downloaded installers. The DevEco Studio image is several gigabytes; a file
 # like this must never enter git history, because it cannot be removed cleanly
