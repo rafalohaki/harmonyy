@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "trigger_mode": "auto",
+
+  "exclude_authors": [
+    "dependabot[bot]",
+    "renovate[bot]",
+    "github-actions[bot]",
+    "snyk-bot"
+  ],
+
+  "rules": [
+    {
+      "name": "No privileged identity",
+      "description": "The HAP must install as an ordinary application. Adding a requestPermissions entry beyond ohos.permission.INTERNET, adding an ACL list or an elevated APL, setting app-feature to hos_system_app, or calling an API the ArkTS compiler flags as a system API all violate this."
+    },
+    {
+      "name": "No secret in the repository",
+      "description": "No API key, token, password or private key may be added to a tracked file. The model API key is entered on the device and stored in device preferences. scripts/check-secrets.sh enforces this in the default test gate."
+    },
+    {
+      "name": "The engine stays platform-agnostic",
+      "description": "Files under core/ must not import from @kit.* or @ohos.*, and must not perform HTTP directly. All network access goes through the injected LlmTransport interface, because that is what keeps the engine testable without an SDK."
+    },
+    {
+      "name": "Degradation is labelled and nothing throws",
+      "description": "An expected failure - network error, timeout, HTTP error, malformed model output, a dropped placeholder - must return a RewriteOutcome with source 'local' and a non-empty fallbackReason that the keyboard renders. A new throw on an expected failure path, or a fallback that leaves the reason empty, violates this."
+    },
+    {
+      "name": "Documentation is backed by the code",
+      "description": "No feature may be described in README.md or under docs/ that does not exist in the code. Test counts, the status table, and capability claims must match what the repository actually contains."
+    },
+    {
+      "name": "Observed behaviour is separated from expectation",
+      "description": "A behaviour may be described as verified only when it was observed on the emulator, with the evidence committed under docs/evidence/. Anything unverified must be marked as unverified, and values copied from documentation rather than tested must be labelled expected rather than verified."
+    },
+    {
+      "name": "The system is not modified",
+      "description": "The deliverable is an installable component that adds a capability without modifying the operating system. No OpenHarmony source patch, no replaced system bundle, and no instruction to flash an image."
+    }
+  ],
+
+  "context_files": [
+    "docs/DECISIONS.md",
+    "docs/ARCHITECTURE.md",
+    "README.md"
+  ],
+
+  "output": {
+    "comments": true,
+    "check_run": true
+  }
+}

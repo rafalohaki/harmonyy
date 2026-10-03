@@ -137,7 +137,7 @@ to `offline: The model service could not be reached.` with a usable offline resu
 
 | Stage | State |
 | --- | --- |
-| Rewrite engine core + unit tests | **done** — 84 tests pass, strict `tsc --noEmit` clean |
+| Rewrite engine core + unit tests | **done** — 92 tests pass, strict `tsc --noEmit` clean |
 | Toolchain | **done** — DevEco Studio 6.1.1.280, Full SDK verified by checksum, emulator image installed |
 | ArkTS application | **compiles** — `BUILD SUCCESSFUL` |
 | Signing | **done offline** with the SDK's development identity; `app-feature: hos_normal_app` |
