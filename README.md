@@ -105,10 +105,10 @@ Not a mock-up. Captured on a HarmonyOS 6.1.1(24) phone emulator; screenshots are
 
 ```
 field text : ja chciec jutro przyjsc na spotkanie o 10
-status line: model: 1233 ms, 0 hidden
-variants   : minimal  Ja chcę jutro przyjść na spotkanie o 10.
-             natural  Chcę przyjść jutro na spotkanie o 10.
-             formal   Będę na spotkaniu o 10 jutro.
+status line: Rewritten by the model in 1.5 s — nothing personal left this device
+variants   : minimal  Ja chcę przyjść jutro na spotkanie o 10.
+             natural  Jutro chcę przyjść na spotkanie o 10.
+             stylish  Jutro przyjdę na spotkanie o 10.
 after a tap: the field contains the corrected sentence
              status line: replaced 41 characters
 ```
@@ -121,19 +121,20 @@ characters before the cursor were removed and the replacement landed in their pl
 
 ```
 picked     : jeść, później, rodzina
-status line: model: 1490 ms, 0 hidden
+status line: Rewritten by the model in 1.1 s — nothing personal left this device
 variants   : faithful  Zjem później z rodziną.
              natural   Będę jeść później z rodziną.
-             expanded  Zamierzam zjeść później z rodziną.
+             expanded  Zamierzam później jeść z rodziną.
 after a tap: the field contains "Zjem później z rodziną."
 ```
 
 Correct Polish aspect and case, from three emoji. **A user who cannot type produced a
 grammatical sentence, in another application's text field.**
 
-Also verified with screenshots in [`docs/evidence/`](docs/evidence): `2 hidden` personal
-identifiers withheld from the model and restored locally, and an unreachable endpoint degrading
-to `offline: The model service could not be reached.` with a usable offline result.
+Also verified with screenshots in [`docs/evidence/`](docs/evidence): an e-mail and a phone
+number withheld from the model — the status line reads `2 personal items stayed on this
+device` and the variants get the real values back — and the offline-only switch producing a
+labelled local result (`Offline: Offline-only mode is on.`) instead of a silent failure.
 
 **And in an app that knows nothing about Bridge.** The same rewrite ran in the Huawei browser's
 own search field — a third-party app with no integration and no awareness that an input method

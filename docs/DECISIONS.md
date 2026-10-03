@@ -96,6 +96,10 @@ test, or a status table that says "done" for something never run.
 
 **Where it lives:** `README.md`, `docs/ARCHITECTURE.md`, `AI_WORKFLOW.md`.
 
+**Co-maintenance pair.** `README.md` and `README.pl.md` describe the same project in two
+languages; a change that updates one must update the other in the same pull request, so
+neither can silently drift from the truth or from each other.
+
 ---
 
 ## D6 — Personal data does not leave the device

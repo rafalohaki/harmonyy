@@ -114,10 +114,10 @@ ekranu znajdują się w [`docs/evidence/`](docs/evidence).
 
 ```
 field text : ja chciec jutro przyjsc na spotkanie o 10
-status line: model: 1233 ms, 0 hidden
-variants   : minimal  Ja chcę jutro przyjść na spotkanie o 10.
-             natural  Chcę przyjść jutro na spotkanie o 10.
-             formal   Będę na spotkaniu o 10 jutro.
+status line: Rewritten by the model in 1.5 s — nothing personal left this device
+variants   : minimal  Ja chcę przyjść jutro na spotkanie o 10.
+             natural  Jutro chcę przyjść na spotkanie o 10.
+             stylish  Jutro przyjdę na spotkanie o 10.
 after a tap: the field contains the corrected sentence
              status line: replaced 41 characters
 ```
@@ -131,20 +131,20 @@ trafił na ich miejsce.
 
 ```
 picked     : jeść, później, rodzina
-status line: model: 1490 ms, 0 hidden
+status line: Rewritten by the model in 1.1 s — nothing personal left this device
 variants   : faithful  Zjem później z rodziną.
              natural   Będę jeść później z rodziną.
-             expanded  Zamierzam zjeść później z rodziną.
+             expanded  Zamierzam później jeść z rodziną.
 after a tap: the field contains "Zjem później z rodziną."
 ```
 
 Poprawny polski aspekt i przypadek, z trzech emoji. **Użytkownik, który nie potrafi
 pisać, utworzył poprawne gramatycznie zdanie — w polu tekstowym innej aplikacji.**
 
-Zrzutami ekranu w [`docs/evidence/`](docs/evidence) potwierdzono również dwa
-identyfikatory osobiste (`2 hidden`) powstrzymane przed wysłaniem do modelu
-i przywrócone lokalnie, a także nieosiągalny punkt końcowy degradujący się do
-`offline: The model service could not be reached.` z użytecznym wynikiem offline.
+Zrzutami ekranu w [`docs/evidence/`](docs/evidence) potwierdzono również e-mail i numer
+telefonu powstrzymane przed modelem — wiersz statusu mówi `2 personal items stayed on this
+device`, a warianty dostają prawdziwe wartości z powrotem — oraz przełącznik offline-only
+dający nazwany wynik lokalny (`Offline: Offline-only mode is on.`) zamiast cichej porażki.
 
 **I w aplikacji, która nic o Bridge nie wie.** To samo przepisanie zadziałało we własnym
 polu wyszukiwania przeglądarki Huawei — cudzej aplikacji bez żadnej integracji i bez
