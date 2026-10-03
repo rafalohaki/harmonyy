@@ -126,7 +126,7 @@ Environment actually used, so the recording matches the instructions:
 | Emulator | `bridge_phone`, `127.0.0.1:5555`, HarmonyOS 6.1.1(24), phone |
 | Bundle | `com.bridge.ime` |
 | Model | `openai/gpt-oss-120b` through an OpenAI-compatible endpoint |
-| Observed latency | 1082–1622 ms per rewrite |
+| Observed latency | 0.8–1.9 s per rewrite in observed runs |
 
 ---
 

@@ -38,16 +38,18 @@ fi
 
 if [ "${1:-}" = "--list" ]; then
   cat <<'MSG'
-01-settings          the settings screen, endpoint and a masked key
-02-attached          the keyboard attached to an empty text field
-03-typed             deliberately broken Polish typed into the field
-04-rewrite-variants  three variants returned by the model
-05-rewrite-applied   the chosen variant replacing the field text
-06-compose-picked    three concepts picked in the strip
-07-compose-variants  a grammatical sentence composed from them
-08-compose-applied   the composed sentence in the field
-09-pii-hidden        the model told '2 hidden', values restored in the variants
-10-offline-fallback  an unreachable endpoint degrading honestly
+01-onboarding         the first screen: what Bridge is and how to turn it on
+02-advanced-settings  endpoint, model and key, behind one labelled door
+03-attached           the keyboard panel attached to an empty scratchpad
+04-typed              deliberately broken Polish in the field
+05-rewrite-variants   three variants returned by the model
+06-rewrite-applied    the chosen variant replacing the field text
+07-compose-picked     three concepts picked in the strip
+08-compose-variants   a grammatical sentence composed from them
+09-compose-applied    the composed sentence sitting in the field
+10-pii-hidden         e-mail and phone redacted on-device, values restored
+11-offline-only       the offline switch degrading honestly, with the reason
+12-in-another-app     rewrite in the Huawei browser's own field (captured manually)
 MSG
   exit 0
 fi
@@ -256,24 +258,30 @@ tap_label "Back"
 sleep 2
 
 echo "== 03 attached to an empty field =="
+focus_scratchpad
+sleep 2
+snap 03-attached
+
+echo "== 04 deliberately broken Polish =="
 SCRATCH="$(type_bounds TextArea)"
 read -r sx sy <<< "$(centre "$SCRATCH")"
 "$CLI" ui text "ja chciec jutro przyjsc na spotkanie o 10" "$sx" "$sy" >/dev/null 2>&1
 sleep 3
-snap 03-attached
-
-echo "== 04 deliberately broken Polish =="
-tap_label "Correct"
-# The remote call took 1.0-1.9 s in every observed run; wait past it.
-sleep 7
 snap 04-typed
 
 echo "== 05 the model's variants =="
-tap_first_variant
-sleep 3
+tap_label "Correct"
+# The remote call has taken 0.8-8.9 s in observed runs, depending on input; wait
+# past the worst of it.
+sleep 12
 snap 05-rewrite-variants
 
 echo "== 06 the chosen variant applied =="
+tap_first_variant
+sleep 3
+snap 06-rewrite-applied
+
+echo "== 07 concepts picked =="
 clear_scratchpad
 focus_scratchpad
 sleep 2
@@ -283,19 +291,21 @@ tap_text "jeść"
 tap_text "później"
 tap_text "rodzina"
 sleep 2
-snap 06-rewrite-applied
-
-echo "== 07 concepts picked =="
-tap_label "Compose"
-sleep 7
 snap 07-compose-picked
 
 echo "== 08 the composed sentence =="
-tap_first_variant
-sleep 3
+tap_label "Compose"
+sleep 12
 snap 08-compose-variants
 
 echo "== 09 the composed sentence applied =="
+tap_first_variant
+sleep 3
+snap 09-compose-applied
+
+echo "== 10 personal data withheld =="
+# An e-mail and a phone number, so the on-device scrubber has something to hold
+# back: the request carries placeholders and the variants get the values back.
 clear_scratchpad
 focus_scratchpad
 SCRATCH="$(type_bounds TextArea)"
@@ -303,57 +313,40 @@ read -r sx sy <<< "$(centre "$SCRATCH")"
 "$CLI" ui text "napisz do jan.kowalski@example.com albo zadzwon +48 123 456 789" "$sx" "$sy" >/dev/null 2>&1
 sleep 3
 tap_label "Correct"
-sleep 7
-snap 09-compose-applied
-
-echo "== 10 personal data withheld =="
-# The offline-only switch, rather than an unreachable endpoint. Both produce the
-# same user-visible behaviour - a labelled local result - and this one is
-# reproducible: the endpoint does not have to be corrupted first, which an earlier
-# version of this scene did, and which left a broken configuration behind when it
-# failed halfway.
-clear_scratchpad
-tap_bounds "offline-only switch" "$(type_bounds Toggle)"
-save_settings
-focus_scratchpad
-SCRATCH="$(type_bounds TextArea)"
-read -r sx sy <<< "$(centre "$SCRATCH")"
-"$CLI" ui text "ja chciec isc do domu" "$sx" "$sy" >/dev/null 2>&1
-sleep 3
-tap_label "Correct"
-sleep 7
+sleep 12
 snap 10-pii-hidden
 
 echo "== 11 degrading honestly, with the reason shown =="
+# The offline-only switch, rather than an unreachable endpoint: reproducible, and
+# it leaves no broken configuration behind. The switch lives on the Advanced
+# screen, so this scene goes there and comes back.
 clear_scratchpad
-tap_bounds "offline-only switch" "$(type_bounds Toggle)"
-save_settings
-focus_scratchpad
-SCRATCH="$(type_bounds TextArea)"
-read -r sx sy <<< "$(centre "$SCRATCH")"
-"$CLI" ui text "ja chciec isc do domu" "$sx" "$sy" >/dev/null 2>&1
-sleep 3
-tap_label "Correct"
-sleep 7
-snap 11-offline-only
-
-echo
-echo "== restoring the working state =="
-# Scene 11 leaves the offline-only switch on, which would silently make every later
-# run an offline run. Put it back. The switch lives on the Advanced screen.
 tap_label "Advanced settings"
 sleep 2
 tap_bounds "offline-only switch" "$(type_bounds Toggle)"
 save_settings
 tap_label "Back"
 sleep 2
-clear_scratchpad
-BASE="$(type_bounds TextInput)"
-read -r bx by <<< "$(centre "$BASE")"
-tap_label "Clear"
-"$CLI" ui text "https://api.groq.com/openai/v1" "$bx" "$by" >/dev/null 2>&1
+focus_scratchpad
+SCRATCH="$(type_bounds TextArea)"
+read -r sx sy <<< "$(centre "$SCRATCH")"
+"$CLI" ui text "ja chciec isc do domu" "$sx" "$sy" >/dev/null 2>&1
+sleep 3
+tap_label "Correct"
+sleep 12
+snap 11-offline-only
+
+echo
+echo "== restoring the working state =="
+# Scene 11 leaves the offline-only switch on, which would silently make every later
+# run an offline run. Put it back. The endpoint is never corrupted by this
+# storyboard, and the preflight checks it at the start of the next run anyway.
+tap_label "Advanced settings"
 sleep 2
+tap_bounds "offline-only switch" "$(type_bounds Toggle)"
 save_settings
+tap_label "Back"
+sleep 2
 
 echo
 echo "captured $(ls -1 "$OUT"/*.jpeg 2>/dev/null | wc -l | tr -d ' ') stills into $OUT"

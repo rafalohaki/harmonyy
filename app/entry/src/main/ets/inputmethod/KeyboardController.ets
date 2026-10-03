@@ -396,12 +396,13 @@ export class KeyboardController {
     let status: string = '';
     if (outcome.source === 'remote') {
       const seconds: string = (Math.round(outcome.latencyMs / 100) / 10).toFixed(1);
-      const privacy: string = outcome.redactedCount > 0
-        ? outcome.redactedCount + ' personal item(s) stayed on this device'
+      const count: number = outcome.redactedCount;
+      const privacy: string = count > 0
+        ? count + (count === 1 ? ' personal item' : ' personal items') + ' stayed on this device'
         : 'nothing personal left this device';
       status = 'Rewritten by the model in ' + seconds + ' s — ' + privacy;
     } else {
-      status = 'Offline: ' + outcome.fallbackReason;
+      status = 'Offline: ' + outcome.fallbackReason.charAt(0).toUpperCase() + outcome.fallbackReason.slice(1);
     }
     this.publishState(this.isAttached(), this.fieldText, status);
     return outcome;
