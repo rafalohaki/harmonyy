@@ -53,6 +53,10 @@ signature/
 DevEco*.zip
 command-line-tools*.zip
 
+# Large toolchain archives fetched from the public OpenHarmony mirror.
+# They are reproducible from the mirror URL, so they do not belong in git.
+.downloads/
+
 # ---------------------------------------------------------------------------
 # Editors and OS noise
 # ---------------------------------------------------------------------------
