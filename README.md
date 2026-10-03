@@ -88,19 +88,38 @@ docs/       Architecture and AI integration documentation
 | 6 | `AI_WORKFLOW.md` | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) | ready, updated as work proceeds |
 | 7 | AI integration documentation | [`docs/AI_INTEGRATION.md`](docs/AI_INTEGRATION.md) | ready |
 
-## Status
+## Verified on the emulator
 
-Work in progress, built during the hackathon window. This README is updated as the build
-progresses — reproducibility is a judged criterion and the easiest one to lose.
+Not a mock-up. Captured on a HarmonyOS 6.1.1(24) phone emulator; screenshots are in
+[`docs/evidence/`](docs/evidence).
+
+```
+field text : ja chciec jutro przyjsc na spotkanie o 10
+status line: model: 1233 ms, 0 hidden
+variants   : minimal  Ja chcę jutro przyjść na spotkanie o 10.
+             natural  Chcę przyjść jutro na spotkanie o 10.
+             formal   Będę na spotkaniu o 10 jutro.
+after a tap: the field contains the corrected sentence
+             status line: replaced 41 characters
+```
+
+Polish conjugation and diacritics come back correct. The `replaced 41 characters` line is also
+the sharpest available proof that the cursor API is used the right way round: exactly the
+characters before the cursor were removed and the replacement landed in their place.
+
+## Status
 
 | Stage | State |
 | --- | --- |
 | Rewrite engine core + unit tests | **done** — 84 tests pass, strict `tsc --noEmit` clean |
-| Toolchain (DevEco Studio / SDK / emulator) | **DevEco Studio installed**, Full SDK fetched and verified, emulator image downloading |
-| ArkTS application | **compiles** — `BUILD SUCCESSFUL`, HAP produced |
+| Toolchain | **done** — DevEco Studio 6.1.1.280, Full SDK verified by checksum, emulator image installed |
+| ArkTS application | **compiles** — `BUILD SUCCESSFUL` |
 | Signing | **done offline** with the SDK's development identity; `app-feature: hos_normal_app` |
-| `.hap` installed on the emulator | not yet — the next milestone |
-| Input method gate (attach + insert) | not yet |
+| `.hap` installed on the emulator | **done** |
+| Input method gate: attach, read and write in another app | **passed**, with screenshots |
+| Rewrite through a real model, applied to the field | **done**, see above |
+| Personal-data scrubbing visible in the UI | implemented; not yet captured as evidence |
+| Offline fallback on failure | implemented and unit-tested; not yet captured as evidence |
 | Demo recording | not yet |
 
 The first milestone is not the AI. It is proving that a third-party input method

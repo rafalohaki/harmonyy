@@ -99,7 +99,40 @@ is injected through `LlmTransport`. That single decision buys three things —
 The generation counter matters: an input method can receive keystrokes while a request is in
 flight, and a late response must not clobber what the user just typed.
 
-## 5. Privacy design
+## 5. The sandbox boundary, and why the settings arrive by event
+
+This is the least obvious thing in the architecture and it cost the most to find.
+
+The input method extension and the settings UIAbility live in the same bundle, run under the
+same UID, and **both report the same preferences directory**:
+
+```
+/data/storage/el2/base/haps/entry/preferences
+```
+
+They do not share its contents. The settings screen saves the API key and reads it back, and a
+cold-started keyboard process reads the same directory and sees an empty store. This was
+established experimentally rather than assumed: the keyboard was made to write a marker into
+the store, the ability was force-stopped and cold-started, and it still read nothing.
+
+The practical consequence is that **any file-based channel across that boundary fails
+silently**, which is the worst possible failure mode, because it looks exactly like "the user
+has not configured anything yet".
+
+So the configuration crosses explicitly, as a common event
+([`common/SettingsBus.ets`](../app/entry/src/main/ets/common/SettingsBus.ets)):
+
+- the settings screen publishes the configuration whenever it saves, and when it appears;
+- the keyboard subscribes when it starts, and publishes a request so that a keyboard starting
+  *after* the settings were saved still receives them;
+- the keyboard keeps the last received configuration in memory and falls back to its own
+  preferences read if nothing has arrived.
+
+The same investigation produced a second fix worth recording: the engine used to be built once
+in `onCreate` and therefore cached whatever the key was at that moment, so a keyboard started
+before configuration never noticed a later change. It is now built per rewrite.
+
+## 6. Privacy design
 
 The remote path is a disclosure, not a secret. Specifically:
 
@@ -110,7 +143,7 @@ The remote path is a disclosure, not a secret. Specifically:
 - No user text is written to disk or to logs. Only the fallback reason and latency counters
   are recorded, and they contain no content.
 
-## 6. Scope contract
+## 7. Scope contract
 
 Deliberately excluded, to keep the submission a working narrow solution:
 
@@ -121,23 +154,22 @@ Deliberately excluded, to keep the submission a working narrow solution:
 - Compose mode is second priority. Rewrite mode ships first because it is smaller, entirely
   visible in the demo, and exercises the same engine.
 
-## 7. Go / no-go gate
+## 8. Go / no-go gate
 
 The single largest technical risk is whether a third-party input method attaches to another
 application's text field on the emulator. It is not assumed.
 
-**Gate:** within roughly two hours of the toolchain first working, a skeleton keyboard must
-insert a fixed string into a real text field in a real app on the emulator, driven by
-`hdc shell ime -e/-s`.
+**Outcome: passed.** The keyboard attaches, reads the field, calls the model, renders variants
+and replaces the field text. Evidence is in `docs/evidence/`.
 
-**On failure:** pivot the submission to the notification-intelligence concept
+**The pivot was pre-planned and did not need to be taken.** Had the gate failed, the submission
+would have moved to the notification-intelligence concept
 (`NotificationListenerExtensionAbility`, which the organisers' capability matrix confirms is
-supported on the DevEco emulator, including the extended-privilege grant). The engine, the
-redactor, the parser, the transport abstraction, the tests and most of the documentation
-survive the pivot unchanged — which is the reason the engine was built first and built
-platform-agnostic.
+supported on the DevEco emulator). The engine, the redactor, the parser, the transport
+abstraction, the tests and most of the documentation would have survived unchanged — which is
+the reason the engine was built first and built platform-agnostic.
 
-## 8. Verification plan
+## 9. Verification plan
 
 | Level | What it proves | How |
 | --- | --- | --- |
