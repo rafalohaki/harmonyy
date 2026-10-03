@@ -185,6 +185,18 @@ followed exactly rather than reconstructed from memory.
    assertion was wrong rather than the code. The test was corrected and the reason recorded in
    a comment.
 
+**A bug caught by grounding rather than by testing.** The first version of the text-replacement
+path read and deleted the field content with `getBackwardSync` / `deleteBackwardSync`, which is
+what the English names suggest. The English reference describes those as operating "after the
+cursor", which contradicts their own names, so the point was checked against two independent
+sources: the Chinese reference (which is the source of the translation) says the same thing, and
+the official IME sample maps `KEYCODE_DEL` — the backspace key — to `deleteForward(1)`. The
+naming is genuinely inverted. Left unfixed, the rewrite would have **appended** the model's
+answer to the user's text instead of replacing it, in every mode, which is the one behaviour a
+demo cannot survive and a unit test cannot catch, because the inverted calls are platform APIs
+that only exist on a device. Corrected to `getForwardSync` / `deleteForwardSync`, with the
+evidence recorded in a comment next to the code so nobody re-introduces it.
+
 **Portability problems found and fixed before the first build:**
 
 - Node's ESM resolver requires `./contracts.ts`; the ArkTS toolchain expects `./contracts`.

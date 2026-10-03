@@ -153,7 +153,17 @@ export class KeyboardController {
     }
   }
 
-  /** Read the text before the cursor so a rewrite has something to work on. */
+  /**
+   * Read the text before the cursor so a rewrite has something to work on.
+   *
+   * NAMING TRAP, verified against two independent sources before relying on it:
+   * "Forward" here means *before* the cursor and "Backward" means *after* it,
+   * which is the opposite of what the English names suggest. Both the English and
+   * Chinese reference say the same thing, and the official IME sample maps
+   * KEYCODE_DEL (backspace) to deleteForward(1) and KEYCODE_FORWARD_DEL to
+   * deleteBackward(1). Using the intuitive reading would have made the rewrite
+   * append text instead of replacing it.
+   */
   private refreshFieldText(): void {
     const client: inputMethodEngine.InputClient | undefined = this.inputClient;
     if (client === undefined) {
@@ -162,7 +172,7 @@ export class KeyboardController {
     }
     try {
       const cursor: number = client.getTextIndexAtCursorSync();
-      this.fieldText = cursor > 0 ? client.getBackwardSync(cursor) : '';
+      this.fieldText = cursor > 0 ? client.getForwardSync(cursor) : '';
     } catch (err) {
       // Reading the field is best-effort: some editors do not expose it.
       const error: BusinessError = err as BusinessError;
@@ -205,6 +215,14 @@ export class KeyboardController {
   /**
    * Replace everything before the cursor with new text.
    * This is the operation the rewrite modes rely on.
+   *
+   * deleteForwardSync removes text *before* the cursor (see the naming trap noted
+   * on refreshFieldText). The cursor index is exactly the number of characters
+   * before the cursor, so deleting that many removes precisely the text that was
+   * read, and the subsequent insert lands where the original started.
+   *
+   * Known limitation, stated rather than hidden: text *after* the cursor is left
+   * alone, so with the cursor mid-field the rewrite covers the prefix only.
    */
   replaceBeforeCursor(text: string): boolean {
     const client: inputMethodEngine.InputClient | undefined = this.inputClient;
@@ -215,11 +233,11 @@ export class KeyboardController {
     try {
       const cursor: number = client.getTextIndexAtCursorSync();
       if (cursor > 0) {
-        client.deleteBackwardSync(cursor);
+        client.deleteForwardSync(cursor);
       }
       client.insertTextSync(text);
       this.fieldText = text;
-      this.publishState(true, this.fieldText, 'replaced');
+      this.publishState(true, this.fieldText, 'replaced ' + cursor + ' characters');
       return true;
     } catch (err) {
       const error: BusinessError = err as BusinessError;
