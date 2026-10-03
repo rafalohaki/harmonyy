@@ -385,15 +385,24 @@ export class KeyboardController {
       if (!build.readOk) {
         outcome.fallbackReason = 'device settings could not be read';
       } else if (!build.configured) {
-        // Include where this context looked, so a path mismatch between the
-        // extension and the settings screen is visible instead of guessed at.
-        outcome.fallbackReason = 'no API key set, store: ' + build.preferencesDir;
+        outcome.fallbackReason = 'no API key set on this device';
       }
     }
 
-    const status: string = outcome.source === 'remote'
-      ? 'model: ' + outcome.latencyMs + ' ms, ' + outcome.redactedCount + ' hidden'
-      : 'offline: ' + outcome.fallbackReason;
+    // The status line is written for the person using the keyboard, not for the
+    // person who wrote it. It says what happened, how long it took, and whether
+    // anything personal left the device, instead of reporting a latency and a
+    // counter whose meaning is private to the code.
+    let status: string = '';
+    if (outcome.source === 'remote') {
+      const seconds: string = (Math.round(outcome.latencyMs / 100) / 10).toFixed(1);
+      const privacy: string = outcome.redactedCount > 0
+        ? outcome.redactedCount + ' personal item(s) stayed on this device'
+        : 'nothing personal left this device';
+      status = 'Rewritten by the model in ' + seconds + ' s — ' + privacy;
+    } else {
+      status = 'Offline: ' + outcome.fallbackReason;
+    }
     this.publishState(this.isAttached(), this.fieldText, status);
     return outcome;
   }

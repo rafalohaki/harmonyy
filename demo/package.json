@@ -1,0 +1,20 @@
+{
+  "name": "bridge-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Remotion composition that assembles real emulator frames into the Bridge demo video",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render BridgeDemo out/bridge-demo.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.532",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remotion": "^4.0.532"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "typescript": "^7.0.2"
+  }
+}

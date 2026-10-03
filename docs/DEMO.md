@@ -109,7 +109,7 @@ video shows the interaction, the screenshots prove the state without trusting a 
 
 Everything below has been executed at least once, so these are checks rather than unknowns.
 
-- [ ] `scripts/dev-loop.sh tests` passes (92 engine tests, reference checks, secret check)
+- [ ] `scripts/dev-loop.sh tests` passes (96 engine tests, reference checks, secret check)
 - [ ] `scripts/dev-loop.sh build` succeeds
 - [ ] `scripts/sign-hap.sh` produces `app/.signing/entry-default-signed.hap`
 - [ ] `hdc -t 127.0.0.1:5555 install -r dist/bridge-1.0.0-signed.hap`
@@ -143,6 +143,7 @@ and reproducible, and they can be cut into the video as stills if a live take mi
 | [`06-pii-withheld.png`](evidence/06-pii-withheld.png) | `model: 1082 ms, 2 hidden`, with the real values restored in the variants |
 | [`07-offline-fallback.png`](evidence/07-offline-fallback.png) | `offline: The model service could not be reached.` plus a usable offline result |
 | [`08-compose-applied.png`](evidence/08-compose-applied.png) | Compose: three concept taps produced `Zjem później z rodziną.` |
+| [`10-rewrite-in-browser.jpeg`](evidence/10-rewrite-in-browser.jpeg) | The rewrite working in a third-party app: the Huawei browser's own search field, with the Bridge panel attached and `Ready — Rewritten by the model in 0.8 s` |
 
 `04-rewrite-attempt.png` is kept only as a record of an earlier failed attempt and should not be
 used.

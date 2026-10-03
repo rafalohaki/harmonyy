@@ -1,17 +1,23 @@
 /**
  * The keyboard surface.
  *
- * Two ways to produce text:
+ * Two ways to produce text, and the surface has to make both obvious without
+ * instructions, because the people it exists for cannot be asked to read a manual:
  *
  *   Rewrite  type however you can, then Correct / Plain / Polite.
- *   Compose  pick concepts instead of typing, then Compose.
+ *   Compose  pick pictures instead of typing, then Compose.
  *
- * Both go through the same engine and the same variant list, and both insert
- * through the same editor proxy. That is the point of the design: one platform
- * capability, two uses.
+ * Design rules this file follows:
  *
- * The status line always names the source, so a degraded answer is never presented
- * as a normal one.
+ *  - Every concept carries its word. An unlabelled pictogram is a guess, and a
+ *    guess is not accessible. The emoji is the fast path for a returning user; the
+ *    label is what makes it usable the first time.
+ *  - The status line is for the user, not the developer. It says what happened and
+ *    whether anything personal left the device, rather than reporting a latency and
+ *    a counter whose meaning is private to the code.
+ *  - A control that cannot do anything is disabled, so the surface never invites a
+ *    tap that will silently do nothing.
+ *  - A degraded answer always says so.
  */
 
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -21,10 +27,10 @@ import { TAG, DOMAIN } from '../../common/Log';
 import type { RewriteMode, RewriteOutcome, Variant } from '../../core/contracts';
 
 /**
- * The concept set.
+ * The concept set: what the user sees, and the word behind it.
  *
- * Small on purpose: a strip that needs scrolling is not usable by the people this
- * mode exists for. Each entry is [what the user sees, what the model is told].
+ * Small on purpose. A strip that needs scrolling is not usable by the people this
+ * mode exists for, and every concept has to be recognisable at a glance.
  */
 const CONCEPTS: string[][] = [
   ['🍽️', 'jeść'],
@@ -48,6 +54,8 @@ const CONCEPTS: string[][] = [
   ['❌', 'nie'],
   ['👨‍👩‍👧', 'rodzina']
 ];
+
+const HINT: string = 'Type however you can and tap Correct, or pick pictures below and tap Compose.';
 
 @Entry
 @Component
@@ -76,6 +84,10 @@ struct Index {
     this.picked = next;
   }
 
+  private hasText(): boolean {
+    return this.fieldText.trim().length > 0;
+  }
+
   /** Ask the engine for variants. Never throws: the engine degrades by design. */
   private async run(mode: RewriteMode): Promise<void> {
     if (this.busy) {
@@ -92,7 +104,7 @@ struct Index {
     } catch (err) {
       // The engine is designed not to throw. If it ever does, fail visibly rather
       // than leaving the keyboard looking frozen.
-      AppStorage.setOrCreate(KEY_STATUS, 'unexpected error, see logs');
+      AppStorage.setOrCreate(KEY_STATUS, 'Something went wrong. See the logs.');
       hilog.error(DOMAIN, TAG, 'run threw unexpectedly');
     } finally {
       this.busy = false;
@@ -109,42 +121,70 @@ struct Index {
     this.picked = [];
   }
 
+  /**
+   * The mode buttons are gated on having an editor, not on the cached field text.
+   *
+   * Gating them on our own copy of the text was a real bug, found while capturing
+   * the demo: when text arrives by any route other than this keyboard - system
+   * autofill, dictation, a paste, or a script - the cached copy is empty, so the
+   * buttons stayed disabled and the keyboard silently refused to act on text that
+   * was visibly there. The editor is the authority on whether there is something to
+   * work on, and the engine already answers "Nothing to rewrite yet." for an empty
+   * field, so there is nothing to protect against.
+   */
   @Builder
   modeButton(label: string, mode: RewriteMode) {
     Button(label)
       .layoutWeight(1)
-      .enabled(!this.busy)
+      .enabled(!this.busy && this.attached)
       .onClick(() => { this.run(mode); })
+  }
+
+  /** One concept: the picture for speed, the word for meaning. */
+  @Builder
+  conceptButton(concept: string[]) {
+    Column({ space: 0 }) {
+      Text(concept[0])
+        .fontSize(19)
+        .maxLines(1)
+      Text(concept[1])
+        .fontSize(9)
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+        .fontColor(this.picked.includes(concept[1]) ? '#FFFFFF' : '#555555')
+    }
+    .width(62)
+    .height(48)
+    .margin(2)
+    .justifyContent(FlexAlign.Center)
+    .backgroundColor(this.picked.includes(concept[1]) ? '#2A5CDB' : '#FFFFFF')
+    .borderRadius(8)
+    .onClick(() => { this.toggle(concept[1]); })
   }
 
   build() {
     Column({ space: 6 }) {
+      // Status: what happened, in the user's terms.
       Row({ space: 8 }) {
-        Text(this.attached ? 'attached' : 'no editor')
+        Text(this.attached ? 'Ready' : 'No text field')
           .fontSize(12)
           .fontColor(this.attached ? '#2A5CDB' : '#B3690A')
-        Text(this.busy ? 'working...' : this.status)
+        Text(this.busy ? 'Working…' : this.status)
           .fontSize(12)
           .fontColor('#555555')
           .layoutWeight(1)
-          .maxLines(1)
+          .maxLines(2)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
       }
       .width('100%')
 
-      Text(this.picked.length > 0 ? 'picked: ' + this.picked.join(', ') : this.fieldText)
+      // What the keyboard can see, or what has been picked to compose from.
+      Text(this.picked.length > 0 ? 'Picked: ' + this.picked.join(', ') : this.fieldText)
         .fontSize(12)
         .fontColor('#1A1A1A')
         .maxLines(2)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
         .width('100%')
-
-      Row({ space: 8 }) {
-        this.modeButton('Correct', 'correct')
-        this.modeButton('Plain', 'plain')
-        this.modeButton('Polite', 'polite')
-      }
-      .width('100%')
 
       if (this.variants.length > 0) {
         ForEach(this.variants, (item: Variant) => {
@@ -169,17 +209,21 @@ struct Index {
           .width('100%')
           .onClick(() => { this.variants = []; })
       } else {
-        // Compose: the concept strip replaces typing entirely.
+        Row({ space: 8 }) {
+          this.modeButton('Correct', 'correct')
+          this.modeButton('Plain', 'plain')
+          this.modeButton('Polite', 'polite')
+        }
+        .width('100%')
+
+        Text(this.hasText() ? 'Or pick pictures instead of typing:' : HINT)
+          .fontSize(10)
+          .fontColor('#777777')
+          .width('100%')
+
         Flex({ wrap: FlexWrap.Wrap }) {
           ForEach(CONCEPTS, (concept: string[]) => {
-            Button(concept[0])
-              .fontSize(18)
-              .height(40)
-              .width(56)
-              .margin(2)
-              .backgroundColor(this.picked.includes(concept[1]) ? '#2A5CDB' : '#FFFFFF')
-              .fontColor(this.picked.includes(concept[1]) ? '#FFFFFF' : '#1A1A1A')
-              .onClick(() => { this.toggle(concept[1]); })
+            this.conceptButton(concept)
           }, (concept: string[]) => concept[1])
         }
         .width('100%')
