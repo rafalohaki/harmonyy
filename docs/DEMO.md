@@ -34,7 +34,7 @@ scripts/dev-loop.sh build
 scripts/dev-loop.sh run
 
 # Enable and switch to the Bridge keyboard (IME tool is API 20+)
-scripts/enable-ime.sh <bundle-name>
+scripts/enable-ime.sh com.bridge.ime
 scripts/enable-ime.sh --status
 
 # Confirm the field-attachment signal in the logs before recording
@@ -107,11 +107,50 @@ video shows the interaction, the screenshots prove the state without trusting a 
 
 ## 6. Checklist before recording
 
-- [ ] `scripts/dev-loop.sh tests` passes (engine tests and reference checks)
+Everything below has been executed at least once, so these are checks rather than unknowns.
+
+- [ ] `scripts/dev-loop.sh tests` passes (92 engine tests, reference checks, secret check)
 - [ ] `scripts/dev-loop.sh build` succeeds
-- [ ] `.hap` installed and launched on the emulator
-- [ ] `scripts/enable-ime.sh --status` reports Bridge as the active input method
-- [ ] Logs show `inputStart: editor attached`
-- [ ] API key set, and not visible anywhere on camera
+- [ ] `scripts/sign-hap.sh` produces `app/.signing/entry-default-signed.hap`
+- [ ] `hdc -t 127.0.0.1:5555 install -r dist/bridge-1.0.0-signed.hap`
+- [ ] `scripts/enable-ime.sh com.bridge.ime` then `--status` reports it active
+- [ ] The settings screen shows the endpoint and a masked key, and **no key is visible on camera**
+- [ ] The scratchpad **Try it here** is empty (it is `@State`, so a cold start clears it)
 - [ ] `hdc shell hilog -r` run immediately before the take
 - [ ] Shot list rehearsed once end to end
+
+Environment actually used, so the recording matches the instructions:
+
+| | |
+| --- | --- |
+| Emulator | `bridge_phone`, `127.0.0.1:5555`, HarmonyOS 6.1.1(24), phone |
+| Bundle | `com.bridge.ime` |
+| Model | `openai/gpt-oss-120b` through an OpenAI-compatible endpoint |
+| Observed latency | 1082–1622 ms per rewrite |
+
+---
+
+## 7. Evidence that already exists
+
+The recording does not have to establish everything from scratch: these are captured, committed
+and reproducible, and they can be cut into the video as stills if a live take misbehaves.
+
+| File | What it shows |
+| --- | --- |
+| [`01-keyboard-attached.png`](evidence/01-keyboard-attached.png) | Our panel rendered inside another app's text field, `attached`, height 34% of the display |
+| [`03-insert-worked.png`](evidence/03-insert-worked.png) | `inserted 14 characters` and the hosting field changed |
+| [`05-rewrite-applied.png`](evidence/05-rewrite-applied.png) | The model's variant applied: `replaced 41 characters` |
+| [`06-pii-withheld.png`](evidence/06-pii-withheld.png) | `model: 1082 ms, 2 hidden`, with the real values restored in the variants |
+| [`07-offline-fallback.png`](evidence/07-offline-fallback.png) | `offline: The model service could not be reached.` plus a usable offline result |
+| [`08-compose-applied.png`](evidence/08-compose-applied.png) | Compose: three concept taps produced `Zjem później z rodziną.` |
+
+`04-rewrite-attempt.png` is kept only as a record of an earlier failed attempt and should not be
+used.
+
+### Compose, as a shot
+
+Compose is the strongest beat for a jury and it is easy to film: focus **Try it here**, tap
+🍽️ ⏰ 👨‍👩‍👧 in the concept strip, tap **Compose**, wait about a second and a half, then tap a
+variant. The field receives a grammatical Polish sentence, produced by three emoji from someone
+who cannot type. Say out loud that this is the mode the European Accessibility Act makes a
+compliance question rather than a favour.
