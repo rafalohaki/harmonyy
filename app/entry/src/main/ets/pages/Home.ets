@@ -16,8 +16,13 @@
  */
 
 import type { common } from '@kit.AbilityKit';
+import { commonEventManager } from '@kit.BasicServicesKit';
+import type { BusinessError } from '@kit.BasicServicesKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
+import { TAG, DOMAIN } from '../common/Log';
 import { BridgeSettings, DEFAULT_BASE_URL, DEFAULT_MODEL } from '../common/Settings';
+import { EVENT_SETTINGS_REQUEST, publishSettings } from '../common/SettingsBus';
 
 @Entry
 @Component
@@ -26,6 +31,32 @@ struct Home {
   @State model: string = DEFAULT_MODEL;
   @State apiKey: string = '';
   @State saved: string = '';
+  /** Scratchpad so the keyboard can be tried without leaving the app. */
+  @State draft: string = '';
+  /** The directory this ability resolved preferences to; compared against the
+   *  keyboard's own, which is shown in its status line. */
+  @State preferencesDir: string = '';
+  /** What the keyboard last wrote into the shared store, if it is shared. */
+  @State keyboardSeenAt: string = 'never';
+  /** Answers the keyboard's request for the configuration. */
+  private subscriber: commonEventManager.CommonEventSubscriber | undefined = undefined;
+
+  /** Send the current configuration to the keyboard. See SettingsBus for why. */
+  private publish(): void {
+    const settings: BridgeSettings = new BridgeSettings();
+    settings.baseUrl = this.baseUrl;
+    settings.model = this.model;
+    settings.apiKey = this.apiKey;
+    publishSettings(settings);
+  }
+
+  aboutToDisappear(): void {
+    const subscriber: commonEventManager.CommonEventSubscriber | undefined = this.subscriber;
+    if (subscriber !== undefined) {
+      commonEventManager.unsubscribe(subscriber);
+      this.subscriber = undefined;
+    }
+  }
 
   private hostContext(): common.UIAbilityContext | undefined {
     return this.getUIContext().getHostContext() as common.UIAbilityContext | undefined;
@@ -41,6 +72,28 @@ struct Home {
     this.baseUrl = loaded.baseUrl;
     this.model = loaded.model;
     this.apiKey = loaded.apiKey;
+    this.preferencesDir = context.preferencesDir;
+    this.keyboardSeenAt = BridgeSettings.readSeenAt(context);
+    // Send what we have, and answer future requests from the keyboard.
+    this.publish();
+    try {
+      const info: commonEventManager.CommonEventSubscribeInfo = {
+        events: [EVENT_SETTINGS_REQUEST]
+      };
+      this.subscriber = commonEventManager.createSubscriberSync(info);
+      commonEventManager.subscribe(this.subscriber,
+        (err: BusinessError, data: commonEventManager.CommonEventData): void => {
+          if (err) {
+            return;
+          }
+          hilog.info(DOMAIN, TAG, 'keyboard asked for settings; resending');
+          this.publish();
+        });
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'could not listen for settings requests: %{public}s',
+        error.message);
+    }
   }
 
   private save(): void {
@@ -55,6 +108,8 @@ struct Home {
     settings.apiKey = this.apiKey;
     BridgeSettings.write(context, settings);
     this.saved = 'Saved on this device only. Nothing is written to the repository.';
+    // Push it to the keyboard as well: it cannot read this store. See SettingsBus.
+    this.publish();
   }
 
   build() {
@@ -78,6 +133,16 @@ struct Home {
         .width('100%')
         .onClick(() => this.save())
 
+      Text('Try it here')
+        .fontSize(13)
+        .fontColor('#1A1A1A')
+      TextArea({
+        text: this.draft,
+        placeholder: 'Type however you like, then use the Bridge keyboard below'
+      })
+        .height(110)
+        .onChange((value: string) => { this.draft = value; })
+
       Text(this.saved)
         .fontSize(12)
         .fontColor('#2A5CDB')
@@ -91,6 +156,13 @@ struct Home {
         'keyboard picker. scripts/enable-ime.sh does both from the command line.')
         .fontSize(12)
         .fontColor('#555555')
+
+      Text('ability store: ' + this.preferencesDir)
+        .fontSize(10)
+        .fontColor('#888888')
+      Text('keyboard saw settings at: ' + this.keyboardSeenAt)
+        .fontSize(10)
+        .fontColor('#888888')
 
       Blank()
     }

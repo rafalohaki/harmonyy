@@ -30,13 +30,16 @@
 import { inputMethodEngine } from '@kit.IMEKit';
 import type { InputMethodExtensionContext } from '@kit.IMEKit';
 import { display } from '@kit.ArkUI';
+import { commonEventManager } from '@kit.BasicServicesKit';
 import type { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 import { TAG, DOMAIN } from '../common/Log';
 import type { RewriteMode, RewriteOutcome, RewriteRequest } from '../core/contracts';
-import type { RewriteEngine } from '../core/engine';
+import type { EngineBuild } from '../engine/BridgeEngineFactory';
 import { BridgeEngineFactory } from '../engine/BridgeEngineFactory';
+import { BridgeSettings } from '../common/Settings';
+import { EVENT_SETTINGS_CHANGED, decodeSettings, requestSettings } from '../common/SettingsBus';
 
 /** Keyboard height as a fraction of the display. */
 const KEYBOARD_HEIGHT_RATIO: number = 0.34;
@@ -55,9 +58,11 @@ export class KeyboardController {
   /** Kept because off('inputStop') requires the exact callback reference. */
   private inputStopCallback: (() => void) | undefined = undefined;
   private fieldText: string = '';
-  private engine: RewriteEngine | undefined = undefined;
   /** Best-effort name of the hosting app, used to pick a register. */
   private contextHint: string = '';
+  /** Configuration received over the event channel; see SettingsBus for why. */
+  private liveSettings: BridgeSettings | undefined = undefined;
+  private subscriber: commonEventManager.CommonEventSubscriber | undefined = undefined;
 
   onCreate(context: InputMethodExtensionContext): void {
     this.context = context;
@@ -69,9 +74,8 @@ export class KeyboardController {
       this.publishState(false, '', 'not an input method application');
       return;
     }
-    // Built once per extension lifetime. A missing API key is not an error here:
-    // the engine simply falls back to the offline path and says so.
-    this.engine = BridgeEngineFactory.create(context);
+    // The engine is deliberately NOT built here. See rewrite().
+    this.subscribeToSettings();
     this.publishState(false, '', 'keyboard created');
     this.createPanel();
     this.registerListeners();
@@ -80,8 +84,46 @@ export class KeyboardController {
   onDestroy(): void {
     this.unregisterListeners();
     this.destroyPanel();
+    const subscriber: commonEventManager.CommonEventSubscriber | undefined = this.subscriber;
+    if (subscriber !== undefined) {
+      commonEventManager.unsubscribe(subscriber);
+      this.subscriber = undefined;
+    }
     this.context = undefined;
     this.ability = undefined;
+  }
+
+  /**
+   * Listen for the configuration sent by the settings screen.
+   *
+   * This is the only working channel: the extension does not share the ability's
+   * preferences store even though both report the same directory. See SettingsBus.
+   */
+  private subscribeToSettings(): void {
+    try {
+      const info: commonEventManager.CommonEventSubscribeInfo = {
+        events: [EVENT_SETTINGS_CHANGED]
+      };
+      this.subscriber = commonEventManager.createSubscriberSync(info);
+      commonEventManager.subscribe(this.subscriber,
+        (err: BusinessError, data: commonEventManager.CommonEventData): void => {
+          if (err) {
+            hilog.warn(DOMAIN, TAG, 'settings event error: %{public}s', err.message);
+            return;
+          }
+          const decoded: BridgeSettings | undefined = decodeSettings(data.data);
+          if (decoded !== undefined) {
+            this.liveSettings = decoded;
+            hilog.info(DOMAIN, TAG, 'settings received from the settings screen');
+            this.publishState(this.isAttached(), this.fieldText, 'settings received');
+          }
+        });
+      // The configuration may have been saved before this process started.
+      requestSettings();
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'could not subscribe to settings: %{public}s', error.message);
+    }
   }
 
   /** Create the soft keyboard panel and load our UI into it. */
@@ -312,24 +354,40 @@ export class KeyboardController {
       locale: 'pl-PL'
     };
 
-    const engine: RewriteEngine | undefined = this.engine;
-    if (engine === undefined) {
+    const context: InputMethodExtensionContext | undefined = this.context;
+    if (context === undefined) {
       return {
         variants: [],
         source: 'local',
-        fallbackReason: 'The engine is not ready yet.',
+        fallbackReason: 'The keyboard has no context yet.',
         redactedCount: 0,
         latencyMs: 0
       };
     }
 
-    const outcome: RewriteOutcome = await engine.rewrite(request);
+    // Built per rewrite on purpose. The engine used to be built once in onCreate,
+    // which cached whatever the API key was at that moment, so a user who
+    // configured the keyboard afterwards saw the offline path with no explanation.
+    // Found by testing on the emulator, not by reading the code.
+    //
+    // Prefer the configuration that arrived over the event channel: this context's
+    // own preferences read returns an empty store (see SettingsBus).
+    const live: BridgeSettings | undefined = this.liveSettings;
+    const build: EngineBuild = (live !== undefined && live.isConfigured())
+      ? BridgeEngineFactory.fromSettings(live)
+      : BridgeEngineFactory.build(context);
+    const outcome: RewriteOutcome = await build.engine.rewrite(request);
 
-    const context: InputMethodExtensionContext | undefined = this.context;
-    if (outcome.source === 'local' && context !== undefined
-      && !BridgeEngineFactory.isConfigured(context)) {
-      // Do not let a missing key masquerade as a rejected one.
-      outcome.fallbackReason = 'Offline: no API key set on this device.';
+    if (outcome.source === 'local') {
+      // Say which failure this is. An unreadable store and an unset key look
+      // identical from the outside, and conflating them wasted real debugging time.
+      if (!build.readOk) {
+        outcome.fallbackReason = 'device settings could not be read';
+      } else if (!build.configured) {
+        // Include where this context looked, so a path mismatch between the
+        // extension and the settings screen is visible instead of guessed at.
+        outcome.fallbackReason = 'no API key set, store: ' + build.preferencesDir;
+      }
     }
 
     const status: string = outcome.source === 'remote'
