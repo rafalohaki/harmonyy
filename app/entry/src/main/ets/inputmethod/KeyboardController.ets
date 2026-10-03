@@ -9,12 +9,18 @@
  * from that verification are worth recording, because both are compile errors that
  * a plausible-looking sample would have introduced:
  *
- *   1. There is no `inputMethodAbility` symbol anywhere in the API 23
+ *   1. There is no `inputMethodAbility` symbol anywhere in the API 23 or 24
  *      declarations. The panel and event APIs are methods of the
  *      `InputMethodAbility` interface, obtained with
  *      `inputMethodEngine.getInputMethodAbility()`.
  *   2. `off('inputStop', callback)` requires the callback, while
  *      `off('inputStart', callback?)` does not. The reference must be kept.
+ *   3. `PanelInfo`, `PanelType` and `PanelFlag` are declared twice, once in
+ *      `@ohos.inputMethod.Panel` and once inside the `inputMethodEngine`
+ *      namespace. Only the second is accepted by `createPanel`, and the two
+ *      disagree on enum spelling (`FLG_FIXED` versus `FLAG_FIXED`). This one was
+ *      caught by the ArkTS compiler, not by reading, which is the point of
+ *      building early.
  *
  * SCOPE NOTE: this file deliberately contains no AI or engine code. The first
  * milestone is proving that a third-party input method can attach to another
@@ -22,8 +28,7 @@
  */
 
 import { inputMethodEngine } from '@kit.IMEKit';
-import { PanelFlag, PanelType } from '@kit.IMEKit';
-import type { InputMethodExtensionContext, PanelInfo } from '@kit.IMEKit';
+import type { InputMethodExtensionContext } from '@kit.IMEKit';
 import { display } from '@kit.ArkUI';
 import type { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -87,9 +92,15 @@ export class KeyboardController {
       return;
     }
 
-    const panelInfo: PanelInfo = {
-      type: PanelType.SOFT_KEYBOARD,
-      flag: PanelFlag.FLAG_FIXED
+    // PanelInfo/PanelType/PanelFlag exist TWICE in this SDK: once in
+    // @ohos.inputMethod.Panel (re-exported by @kit.IMEKit) and once inside the
+    // inputMethodEngine namespace. They are structurally similar but NOT
+    // interchangeable - the compiler rejects one where the other is expected - and
+    // createPanel wants the engine's. Their enum members also differ in spelling:
+    // the engine uses FLG_FIXED, the Panel module uses FLAG_FIXED.
+    const panelInfo: inputMethodEngine.PanelInfo = {
+      type: inputMethodEngine.PanelType.SOFT_KEYBOARD,
+      flag: inputMethodEngine.PanelFlag.FLG_FIXED
     };
 
     ability.createPanel(context, panelInfo)

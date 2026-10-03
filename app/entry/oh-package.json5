@@ -1,9 +1,10 @@
 {
   "name": "entry",
   "version": "1.0.0",
-  "description": "Bridge input method and settings surface",
+  "description": "Please describe the basic information.",
   "main": "",
   "author": "",
-  "license": "Apache-2.0",
+  "license": "",
   "dependencies": {}
 }
+

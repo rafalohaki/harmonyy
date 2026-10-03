@@ -1,13 +1,27 @@
 {
   "app": {
+    // Left empty deliberately. Signing is performed offline after the build with
+    // the Full SDK's hap-sign-tool.jar and its public development material, which
+    // needs no Huawei account. Referencing a non-existent signing config here
+    // would make the build fail with "not signed" before it produces anything.
     "signingConfigs": [],
     "products": [
       {
         "name": "default",
-        "compileSdkVersion": 23,
-        "compatibleSdkVersion": 20,
-        "targetSdkVersion": 24,
-        "runtimeOS": "OpenHarmony"
+        // No "signingConfig" key on purpose; see the note above.
+        //
+        // API 20 is the challenge's minimum supported level and is declared here
+        // as the compatible (minimum) SDK. The emulator image available for this
+        // host is HarmonyOS 6.1.1(24), which is what we compile and target.
+        "compatibleSdkVersion": "6.0.0(20)",
+        "targetSdkVersion": "6.1.1(24)",
+        "runtimeOS": "HarmonyOS",
+        "buildOption": {
+          "strictMode": {
+            "caseSensitiveCheck": true,
+            "useNormalizedOHMUrl": true
+          }
+        }
       }
     ],
     "buildModeSet": [

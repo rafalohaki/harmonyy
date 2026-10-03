@@ -19,6 +19,10 @@
     {
       "name": "ime_desc",
       "value": "Rewrites what you type, in every app, without sending your personal data"
+    },
+    {
+      "name": "internet_reason",
+      "value": "Sends scrubbed text to the rewrite model. Personal identifiers are removed on this device first."
     }
   ]
 }
