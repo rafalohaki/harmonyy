@@ -82,7 +82,7 @@ docs/       Architecture and AI integration documentation
 | --- | --- | --- | --- |
 | 1 | Public source code repository | this repository | ready |
 | 2 | Reproducible setup, build, install and launch instructions | [Build and run](#build-and-run), [`scripts/`](scripts) | ready for the toolchain steps; verified up to the SDK boundary |
-| 3 | A working `.hap` package | produced by `scripts/dev-loop.sh build` | **not yet** — blocked on the DevEco download |
+| 3 | A working `.hap` package | [`dist/bridge-1.0.0-signed.hap`](dist/bridge-1.0.0-signed.hap), produced by `scripts/dev-loop.sh build` + `scripts/sign-hap.sh` | **built and signed** as an ordinary app; installation on the emulator pending |
 | 4 | A brief recorded demonstration | plan and shot list in [`docs/DEMO.md`](docs/DEMO.md) | plan ready, not yet recorded |
 | 5 | Architecture and implementation description | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | ready |
 | 6 | `AI_WORKFLOW.md` | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) | ready, updated as work proceeds |
@@ -95,10 +95,12 @@ progresses — reproducibility is a judged criterion and the easiest one to lose
 
 | Stage | State |
 | --- | --- |
-| Rewrite engine core + unit tests | **done** — 58 tests pass, strict `tsc --noEmit` clean |
-| Toolchain (DevEco Studio / SDK / emulator) | installer downloading; this is the critical path |
-| ArkTS input method skeleton | written, **not yet compiled** (needs the SDK) |
-| `.hap` on the emulator | not yet — the next milestone |
+| Rewrite engine core + unit tests | **done** — 84 tests pass, strict `tsc --noEmit` clean |
+| Toolchain (DevEco Studio / SDK / emulator) | **DevEco Studio installed**, Full SDK fetched and verified, emulator image downloading |
+| ArkTS application | **compiles** — `BUILD SUCCESSFUL`, HAP produced |
+| Signing | **done offline** with the SDK's development identity; `app-feature: hos_normal_app` |
+| `.hap` installed on the emulator | not yet — the next milestone |
+| Input method gate (attach + insert) | not yet |
 | Demo recording | not yet |
 
 The first milestone is not the AI. It is proving that a third-party input method
@@ -130,12 +132,13 @@ scripts/dev-loop.sh tests
 scripts/dev-loop.sh engine
 BRIDGE_API_KEY=sk-... node scripts/try-engine.mjs
 
-# 6. Build, then install and launch
+# 6. Build, sign, then install and launch
 scripts/dev-loop.sh build
+scripts/sign-hap.sh
 scripts/dev-loop.sh run
 
 # 7. Enable and switch to the Bridge keyboard
-scripts/enable-ime.sh <bundle-name>
+scripts/enable-ime.sh com.bridge.ime
 scripts/enable-ime.sh --status
 
 # 8. Capture evidence from the emulator

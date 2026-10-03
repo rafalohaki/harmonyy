@@ -65,3 +65,6 @@ command-line-tools*.zip
 *.iml
 .DS_Store
 *.log
+
+# Offline signing work directory (generated certificates and the signed HAP).
+app/.signing/
