@@ -280,6 +280,31 @@ Two details cost real debugging time and are recorded in the script:
   `Illegal base64 character 20` (0x20 is a space, which is a misleading message).
 - `verify-profile` reports the profile under `content.bundle-info`, not at the top level.
 
+### Do not install with DevEco Studio's Run button
+
+This is worth a warning because it looks like a broken build and is not one.
+
+`build-profile.json5` deliberately has **no `signingConfig`**, so that `devecocli build` produces
+an unsigned HAP for the offline signing step. DevEco Studio's Run and Debug therefore has nothing
+to sign with, sends the **unsigned** artefact, and the device refuses it:
+
+```
+Install Failed: error: failed to install bundle.
+code:9568332
+error: install sign info inconsistent.
+```
+
+Two separate causes are worth telling apart, because the fix differs:
+
+| Situation | Why it happens | What to do |
+| --- | --- | --- |
+| During development, as above | The IDE sent an unsigned HAP over a signed install | Use the scripted path: `scripts/dev-loop.sh build`, `scripts/sign-hap.sh`, then `hdc install -r`. Nothing is broken and the installed app is untouched — the failed install changed nothing |
+| After enabling signing in DevEco Studio | The IDE's Huawei-account-backed debug identity differs from the SDK's offline identity, and a device keeps one signer per bundle | Either keep using the offline identity and never enable the IDE's signing, or uninstall the bundle once so the IDE identity becomes canonical. Uninstalling **deletes the app's data**, including the API key and the offline-only setting |
+
+DevEco Studio remains useful for the emulator, the Device Manager and the SDK; only its Run button
+is the wrong tool here, because this project signs offline on purpose and that is documented as
+decision D3 in [`DECISIONS.md`](DECISIONS.md).
+
 The input method tool used by `enable-ime.sh` is **verified from OpenHarmony documentation** as
 supported since API 20:
 
