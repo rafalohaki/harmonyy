@@ -72,3 +72,49 @@ pull request, so the finding is resolved in the next review rather than argued a
 
 A review finding is treated as a report to check, not an instruction to obey: the first step is
 always to reproduce it in the repository.
+
+### The second finding was the better one
+
+On pull request [#2](https://github.com/rafalohaki/harmonyy/pull/2), which contains code rather
+than documentation, Prelint returned:
+
+> **Warning.** `forceOffline` is declared as non-optional `boolean` here, but `core/src/engine.ts`
+> (the canonical source) declares it `forceOffline?: boolean`.
+
+Also correct, and verified with `diff` before being acted on. It is the stronger finding because
+of what it is: **drift between the canonical source and the copy generated from it.**
+
+`core/src` is the single source of truth, and `app/entry/src/main/ets/core/` is produced from it
+by `scripts/sync-core.sh`. The field had been made optional in the source *after* the last sync,
+so the copy was stale. That defect:
+
+- **compiles** — both versions are valid TypeScript, so the compiler has nothing to say;
+- **passes the whole test suite** — the tests exercise `core/src`, not the copy, so the behaviour
+  under test is the correct one;
+- **breaks the project's own architectural invariant**, which is the thing `DECISIONS.md` D8
+  exists to protect.
+
+Nothing in the toolchain could have seen it. A reviewer comparing two files could, which is what
+"does this change follow the documented decisions" means in practice.
+
+The fix has two parts, and the second is the point:
+
+1. the copy was regenerated;
+2. **`scripts/check-refs.mjs` now compares every generated file against its canonical source**,
+   applying the same transform the sync applies, and fails with `run scripts/sync-core.sh` when
+   they differ — so the invariant is enforced by the default test gate instead of by memory.
+
+The guard was then tested against itself: the drift was reintroduced deliberately, the check
+reported `FAIL engine.ts has drifted from core/src`, and restoring the file returned all eight
+checks to green.
+
+That is the loop the tool is for. A reviewer catches a defect class no linter can see, and the
+response is to make the class impossible rather than to fix the one instance.
+
+### Both are visible on the pull requests
+
+The findings, the fixes and the approvals live on
+[#1](https://github.com/rafalohaki/harmonyy/pull/1) and
+[#2](https://github.com/rafalohaki/harmonyy/pull/2) rather than only being summarised here, so they
+can be checked directly. Both were reviewed, both findings were fixed on the same branch, and both
+ended with Prelint approving the change.
