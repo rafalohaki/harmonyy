@@ -34,6 +34,8 @@ const ACCENT_COLOR: string = '#2A5CDB';
 struct Home {
   /** Scratchpad so the keyboard can be tried without leaving the app. */
   @State draft: string = '';
+  /** True while the scratchpad holds focus: the explanation header gets out of the way. */
+  @State editing: boolean = false;
   /** The live configuration, held only so it can be handed to the keyboard. */
   @State ready: boolean = false;
   /** Answers the keyboard's request for the configuration. */
@@ -138,37 +140,39 @@ struct Home {
   build() {
     Scroll() {
       Column({ space: 12 }) {
-        Text('Bridge')
-          .fontSize(28)
-          .fontColor(LABEL_COLOR)
-        Text('Type however you can. Bridge turns it into a clear sentence, in the ' +
-          'field you are already using — in any app on this device.')
-          .fontSize(14)
-          .fontColor(BODY_COLOR)
-        Text('If typing is not possible at all, build the sentence from pictures ' +
-          'instead.')
-          .fontSize(14)
-          .fontColor(BODY_COLOR)
+        if (!this.editing) {
+          Text('Bridge')
+            .fontSize(28)
+            .fontColor(LABEL_COLOR)
+          Text('Type however you can. Bridge turns it into a clear sentence, in the ' +
+            'field you are already using — in any app on this device.')
+            .fontSize(14)
+            .fontColor(BODY_COLOR)
+          Text('If typing is not possible at all, build the sentence from pictures ' +
+            'instead.')
+            .fontSize(14)
+            .fontColor(BODY_COLOR)
 
-        this.section('HOW TO TURN IT ON')
-        this.step('1', 'Open Settings, then Input method, and turn Bridge on.')
-        this.step('2', 'Pick Bridge in the keyboard switcher.')
-        this.hint('On a workstation, scripts/enable-ime.sh does both.')
+          this.section('HOW TO TURN IT ON')
+          this.step('1', 'Open Settings, then Input method, and turn Bridge on.')
+          this.step('2', 'Pick Bridge in the keyboard switcher.')
+          this.hint('On a workstation, scripts/enable-ime.sh does both.')
 
-        if (!this.ready) {
-          Row({ space: 8 }) {
-            Text('Bridge needs an API key before it can rewrite anything.')
-              .fontSize(12)
-              .fontColor('#8A5A00')
-              .layoutWeight(1)
-            Button('Open settings')
-              .fontSize(12)
-              .onClick(() => { this.openAdvanced(); })
+          if (!this.ready) {
+            Row({ space: 8 }) {
+              Text('Bridge needs an API key before it can rewrite anything.')
+                .fontSize(12)
+                .fontColor('#8A5A00')
+                .layoutWeight(1)
+              Button('Open settings')
+                .fontSize(12)
+                .onClick(() => { this.openAdvanced(); })
+            }
+            .width('100%')
+            .padding(10)
+            .backgroundColor('#FFF4E0')
+            .borderRadius(8)
           }
-          .width('100%')
-          .padding(10)
-          .backgroundColor('#FFF4E0')
-          .borderRadius(8)
         }
 
         this.section('TRY IT HERE')
@@ -179,6 +183,8 @@ struct Home {
         })
           .height(120)
           .onChange((value: string) => { this.draft = value; })
+          .onFocus(() => { this.editing = true; })
+          .onBlur(() => { this.editing = false; })
 
         this.hint('Focus this box and the Bridge keyboard appears at the bottom of ' +
           'the screen. Write badly on purpose: that is what it is for.')
@@ -193,7 +199,7 @@ struct Home {
         Blank().height(24)
       }
       .width('100%')
-      .padding(20)
+      .padding({ top: 56, left: 20, right: 20, bottom: 20 })
       .alignItems(HorizontalAlign.Start)
     }
     .width('100%')

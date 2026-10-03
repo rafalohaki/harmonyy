@@ -328,7 +328,7 @@ Run these in order; each one is cheap and each failure is unambiguous.
 | # | Command | Expected |
 | --- | --- | --- |
 | 1 | `node --version` | v22 or later |
-| 2 | `node --test core/test/` | 92 tests pass |
+| 2 | `node --test core/test/` | 96 tests pass |
 | 3 | `node scripts/check-refs.mjs` | all checks pass |
 | 4 | `node scripts/try-engine.mjs --mock` | remote answers, redaction counted, offline fallback shown |
 | 5 | `scripts/setup-toolchain.sh` | `devecocli` 1.3.4 and DevEco Studio found |

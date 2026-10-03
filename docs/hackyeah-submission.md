@@ -144,6 +144,6 @@ Both fields: **https://github.com/rafalohaki/harmonyy**
 
 ## Presentation (PDF/PPTX, ≤10 MB)
 
-Not yet produced. If wanted: a short deck (problem → why a system keyboard is only possible
-on an open input layer → two modes → privacy → live proof frame → roadmap) can be generated
-from this repository's docs; ask and it will be built.
+File to upload: [`bridge-hackyeah-presentation.pptx`](bridge-hackyeah-presentation.pptx) —
+8 slides built from the same on-device stills as the video (title, problem, the input-method
+idea as a diagram, both modes, privacy, evidence, closing). Well under the size limit.
