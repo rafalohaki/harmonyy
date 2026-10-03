@@ -217,51 +217,63 @@ echo "== preflight: configuration =="
 "$HDC" -t "$DEVICE" shell aa start -b "$BUNDLE" -a EntryAbility >/dev/null 2>&1
 sleep 7
 
-ENDPOINT="$(type_bounds TextInput | head -1)"
+# The endpoint lives on the Advanced settings screen since the first screen became
+# an explanation of the product. Check it there, fix it there, come back.
+tap_label "Advanced settings"
+sleep 2
+
 BASE_NOW="$("$CLI" ui layout --all-windows 2>/dev/null \
   | grep -oE 'TextInput \[[0-9]+,[0-9]+,[0-9]+,[0-9]+\] "[^"]*"' | head -1 \
-  | sed 's/.*"\(.*\)"$/\1/')"
-echo "endpoint: $BASE_NOW"
+  | sed 's/.*"\(.*\)"$/\1/')" || true
+echo "endpoint: ${BASE_NOW:-<not on screen>}"
 
 if [ "$BASE_NOW" != "https://api.groq.com/openai/v1" ]; then
   echo "  restoring it, so the model scenes capture the model"
+  ENDPOINT="$(type_bounds TextInput)"
   tap_label "Clear"
-  read -r px py <<< "$(centre "$ENDPOINT")"
-  "$CLI" ui text "https://api.groq.com/openai/v1" "$px" "$py" >/dev/null 2>&1
-  sleep 2
-  save_settings
+  if [ -n "$ENDPOINT" ]; then
+    read -r px py <<< "$(centre "$ENDPOINT")"
+    "$CLI" ui text "https://api.groq.com/openai/v1" "$px" "$py" >/dev/null 2>&1
+    sleep 2
+    save_settings
+  fi
 fi
+
+tap_label "Back"
+sleep 2
 echo
 
-echo "== 01 settings =="
+echo "== 01 the first screen: what Bridge is =="
 "$HDC" -t "$DEVICE" shell ime -s "$BUNDLE" >/dev/null 2>&1 || true
 clear_scratchpad
-snap 01-settings
+snap 01-onboarding
 
-echo "== 02 attached to an empty field =="
-focus_scratchpad
+echo "== 02 configuration, behind one labelled door =="
+tap_label "Advanced settings"
 sleep 2
-snap 02-attached
+snap 02-advanced-settings
+tap_label "Back"
+sleep 2
 
-echo "== 03 deliberately broken Polish =="
+echo "== 03 attached to an empty field =="
 SCRATCH="$(type_bounds TextArea)"
 read -r sx sy <<< "$(centre "$SCRATCH")"
 "$CLI" ui text "ja chciec jutro przyjsc na spotkanie o 10" "$sx" "$sy" >/dev/null 2>&1
 sleep 3
-snap 03-typed
+snap 03-attached
 
-echo "== 04 the model's variants =="
+echo "== 04 deliberately broken Polish =="
 tap_label "Correct"
 # The remote call took 1.0-1.9 s in every observed run; wait past it.
 sleep 7
-snap 04-rewrite-variants
+snap 04-typed
 
-echo "== 05 the chosen variant applied =="
+echo "== 05 the model's variants =="
 tap_first_variant
 sleep 3
-snap 05-rewrite-applied
+snap 05-rewrite-variants
 
-echo "== 06 concepts picked =="
+echo "== 06 the chosen variant applied =="
 clear_scratchpad
 focus_scratchpad
 sleep 2
@@ -271,19 +283,19 @@ tap_text "jeść"
 tap_text "później"
 tap_text "rodzina"
 sleep 2
-snap 06-compose-picked
+snap 06-rewrite-applied
 
-echo "== 07 the composed sentence =="
+echo "== 07 concepts picked =="
 tap_label "Compose"
 sleep 7
-snap 07-compose-variants
+snap 07-compose-picked
 
-echo "== 08 the composed sentence applied =="
+echo "== 08 the composed sentence =="
 tap_first_variant
 sleep 3
-snap 08-compose-applied
+snap 08-compose-variants
 
-echo "== 09 personal data withheld =="
+echo "== 09 the composed sentence applied =="
 clear_scratchpad
 focus_scratchpad
 SCRATCH="$(type_bounds TextArea)"
@@ -292,9 +304,9 @@ read -r sx sy <<< "$(centre "$SCRATCH")"
 sleep 3
 tap_label "Correct"
 sleep 7
-snap 09-pii-hidden
+snap 09-compose-applied
 
-echo "== 10 degrading honestly, with the reason shown =="
+echo "== 10 personal data withheld =="
 # The offline-only switch, rather than an unreachable endpoint. Both produce the
 # same user-visible behaviour - a labelled local result - and this one is
 # reproducible: the endpoint does not have to be corrupted first, which an earlier
@@ -310,14 +322,31 @@ read -r sx sy <<< "$(centre "$SCRATCH")"
 sleep 3
 tap_label "Correct"
 sleep 7
-snap 10-offline-only
+snap 10-pii-hidden
+
+echo "== 11 degrading honestly, with the reason shown =="
+clear_scratchpad
+tap_bounds "offline-only switch" "$(type_bounds Toggle)"
+save_settings
+focus_scratchpad
+SCRATCH="$(type_bounds TextArea)"
+read -r sx sy <<< "$(centre "$SCRATCH")"
+"$CLI" ui text "ja chciec isc do domu" "$sx" "$sy" >/dev/null 2>&1
+sleep 3
+tap_label "Correct"
+sleep 7
+snap 11-offline-only
 
 echo
 echo "== restoring the working state =="
-# Scene 10 leaves the offline-only switch on, which would silently make every later
-# run an offline run. Put it back.
+# Scene 11 leaves the offline-only switch on, which would silently make every later
+# run an offline run. Put it back. The switch lives on the Advanced screen.
+tap_label "Advanced settings"
+sleep 2
 tap_bounds "offline-only switch" "$(type_bounds Toggle)"
 save_settings
+tap_label "Back"
+sleep 2
 clear_scratchpad
 BASE="$(type_bounds TextInput)"
 read -r bx by <<< "$(centre "$BASE")"

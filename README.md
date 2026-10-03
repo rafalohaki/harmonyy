@@ -1,3 +1,5 @@
+**English** · [Polski](README.pl.md)
+
 # Bridge — a system input layer that gives people a voice, everywhere
 
 > HackYeah 2026 · OpenHarmony / HarmonyOS Challenge

@@ -77,5 +77,4 @@ app/.signing/
 # scripts/capture-demo-stills.sh, so only the composition and the finished video
 # belong in git.
 demo/node_modules/
-demo/public/stills/
 demo/out/
