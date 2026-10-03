@@ -1,19 +1,16 @@
 /**
  * The keyboard surface.
  *
- * MILESTONE 1 (current): prove that this panel renders inside another
- * application's text field and can write into it. The three mode buttons are
- * present so the shape of the product is visible, but they currently apply a
- * deliberately minimal local tidying and say so in the status line.
- *
- * MILESTONE 2 replaces the body of `applyMode` with a call to the rewrite engine
- * in core/, behind the ArkHttpTransport. Nothing else on this page changes.
+ * It renders whatever the engine returned, including the case where the engine
+ * fell back to the offline path. The status line always names the source, so a
+ * degraded answer is never presented as a normal one.
  */
 
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 import { keyboardController, KEY_ATTACHED, KEY_FIELD_TEXT, KEY_STATUS } from '../KeyboardController';
-import { TAG, DOMAIN } from '../Log';
+import { TAG, DOMAIN } from '../../common/Log';
+import type { RewriteMode, RewriteOutcome, Variant } from '../../core/contracts';
 
 @Entry
 @Component
@@ -21,39 +18,35 @@ struct Index {
   @StorageProp(KEY_ATTACHED) attached: boolean = false;
   @StorageProp(KEY_FIELD_TEXT) fieldText: string = '';
   @StorageProp(KEY_STATUS) status: string = 'starting';
+  @State variants: Variant[] = [];
+  @State busy: boolean = false;
 
-  /**
-   * MILESTONE 1 placeholder. Deliberately does not pretend to be the model: it
-   * only tidies whitespace, capitalises and punctuates, and the status line
-   * makes clear that this is the offline path.
-   */
-  private applyMode(mode: string): void {
-    const current: string = keyboardController.getFieldText();
-    if (current.trim().length === 0) {
-      AppStorage.setOrCreate(KEY_STATUS, 'nothing to rewrite yet');
+  /** Ask the engine for variants. Never throws: the engine degrades by design. */
+  private async run(mode: RewriteMode): Promise<void> {
+    if (this.busy) {
       return;
     }
-    const tidied: string = this.tidy(current);
-    hilog.info(DOMAIN, TAG, 'applyMode %{public}s on %{public}d characters',
-      mode, current.length);
-    keyboardController.replaceBeforeCursor(tidied);
-    AppStorage.setOrCreate(KEY_STATUS, 'milestone 1: local tidying only, engine not wired yet');
+    this.busy = true;
+    this.variants = [];
+    try {
+      const outcome: RewriteOutcome = await keyboardController.rewrite(mode);
+      this.variants = outcome.variants;
+      hilog.info(DOMAIN, TAG, 'rewrite %{public}s: %{public}s, %{public}d variants',
+        mode, outcome.source, outcome.variants.length);
+    } catch (err) {
+      // The engine is designed not to throw. If it ever does, fail visibly
+      // rather than leaving the keyboard looking frozen.
+      AppStorage.setOrCreate(KEY_STATUS, 'unexpected error, see logs');
+      hilog.error(DOMAIN, TAG, 'rewrite threw unexpectedly');
+    } finally {
+      this.busy = false;
+    }
   }
 
-  private tidy(text: string): string {
-    let out: string = text.replace(/\s+/g, ' ').trim();
-    if (out.length > 0) {
-      out = out.charAt(0).toUpperCase() + out.substring(1);
-    }
-    const last: string = out.charAt(out.length - 1);
-    if (last !== '.' && last !== '!' && last !== '?') {
-      out = out + '.';
-    }
-    return out;
-  }
-
-  private onProbe(): void {
-    keyboardController.insertText('Bridge works. ');
+  /** Replace the field content with the chosen variant. */
+  private apply(variant: Variant): void {
+    keyboardController.replaceBeforeCursor(variant.text);
+    this.variants = [];
   }
 
   build() {
@@ -62,7 +55,7 @@ struct Index {
         Text(this.attached ? 'attached' : 'no editor')
           .fontSize(12)
           .fontColor(this.attached ? '#2A5CDB' : '#B3690A')
-        Text(this.status)
+        Text(this.busy ? 'working...' : this.status)
           .fontSize(12)
           .fontColor('#555555')
           .layoutWeight(1)
@@ -81,29 +74,52 @@ struct Index {
       Row({ space: 8 }) {
         Button('Correct')
           .layoutWeight(1)
-          .onClick(() => this.applyMode('correct'))
+          .enabled(!this.busy)
+          .onClick(() => { this.run('correct'); })
         Button('Plain')
           .layoutWeight(1)
-          .onClick(() => this.applyMode('plain'))
+          .enabled(!this.busy)
+          .onClick(() => { this.run('plain'); })
         Button('Polite')
           .layoutWeight(1)
-          .onClick(() => this.applyMode('polite'))
+          .enabled(!this.busy)
+          .onClick(() => { this.run('polite'); })
       }
       .width('100%')
 
-      Row({ space: 8 }) {
-        Button('Insert test text')
-          .layoutWeight(1)
-          .backgroundColor('#2A5CDB')
-          .onClick(() => this.onProbe())
-        Button('Reload')
-          .layoutWeight(1)
-          .onClick(() => {
-            const text: string = keyboardController.getFieldText();
-            AppStorage.setOrCreate(KEY_STATUS, 'field has ' + text.length + ' characters');
-          })
+      if (this.variants.length > 0) {
+        ForEach(this.variants, (item: Variant) => {
+          Column({ space: 2 }) {
+            Text(item.label)
+              .fontSize(11)
+              .fontColor('#2A5CDB')
+            Text(item.text)
+              .fontSize(13)
+              .fontColor('#1A1A1A')
+              .maxLines(2)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+          }
+          .width('100%')
+          .padding(8)
+          .backgroundColor('#FFFFFF')
+          .borderRadius(8)
+          .onClick(() => { this.apply(item); })
+        }, (item: Variant) => item.label + '|' + item.text)
+      } else {
+        Row({ space: 8 }) {
+          Button('Insert test text')
+            .layoutWeight(1)
+            .backgroundColor('#2A5CDB')
+            .onClick(() => { keyboardController.insertText('Bridge works. '); })
+          Button('Reload field')
+            .layoutWeight(1)
+            .onClick(() => {
+              const text: string = keyboardController.getFieldText();
+              AppStorage.setOrCreate(KEY_STATUS, 'field has ' + text.length + ' characters');
+            })
+        }
+        .width('100%')
       }
-      .width('100%')
     }
     .width('100%')
     .height('100%')

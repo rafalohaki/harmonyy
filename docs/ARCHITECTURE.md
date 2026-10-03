@@ -17,6 +17,15 @@ Verified before designing on it: OpenHarmony's IME tool (`hdc shell ime -e <bund
 enable, `-s <bundle>` to switch) exists and is **supported since API 20**, so enabling the
 keyboard is scriptable rather than a manual Settings journey.
 
+A second platform capability carries the contextual half of the idea:
+`EditorAttribute.bundleName` (API 14+), delivered through the keyboard delegate's
+`editorAttributeChanged` event, tells the input method **which application owns the focused
+field**. That is the signal the prompt uses to pick a register: a message to a friend and an
+e-mail to an office are not the same text even when the words are. The mapping from bundle
+name to register hint is a small heuristic and is labelled as such in the code; an
+unrecognised bundle is passed through raw rather than guessed at, and the documentation's
+warning that `bundleName` may be an empty string is handled explicitly.
+
 ## 2. Layer map
 
 ```
@@ -133,6 +142,7 @@ platform-agnostic.
 | Level | What it proves | How |
 | --- | --- | --- |
 | Unit | engine logic and every failure mode | `node --test core/test/` |
+| Reference integrity | no missing imports, resources, pages or entry points | `node scripts/check-refs.mjs` |
 | Static | ArkTS strictness | `devecocli check lint` |
 | Build | HAP is produced | `devecocli build` → `BUILD SUCCESSFUL` |
 | Device | installs and launches on the emulator | `devecocli run`, `devecocli log` |

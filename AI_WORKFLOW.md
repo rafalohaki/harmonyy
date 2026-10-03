@@ -138,3 +138,69 @@ coming up.
   This is disclosed in the UI, in the README and in `docs/AI_INTEGRATION.md`. We do not claim
   on-device inference for that path. The offline fallback exists so the product degrades
   honestly rather than silently failing.
+
+---
+
+## 6. Work log
+
+### Session 1 — reconnaissance, architecture, engine, app skeleton
+
+**Reconnaissance.** Cloned the organisers' repository and read `FAQ.md`, `README.md`, the
+emulator capability matrix, the nine bundled Agent Skills and the workshop slide deck
+(image-only PDF, recovered by extracting and reading its slides). Extracted the judging
+guidance that is not in the written statement, most importantly the scoping advice quoted in
+section 2.
+
+**Feasibility checks before designing.** Two platform questions decided the architecture, and
+both were answered from primary sources rather than assumption:
+
+1. *Can a third-party app provide an `AccessibilityExtensionAbility`?* Answered via the
+   `deepwiki` MCP server against `openharmony/docs`: it needs
+   `ohos.permission.ACCESSIBILITY_EXTENSION_ABILITY` (`system_basic`, ACL) and many
+   `AccessibilityExtensionContext` query/inject APIs were deprecated around OpenHarmony
+   5.0.0.35. This eliminated the highest-novelty idea we had.
+2. *Can an input method be enabled and switched from the command line?* Answered from
+   OpenHarmony's IME documentation: `hdc shell ime -e/-s`, **supported since API 20**. This is
+   what made the chosen route reproducible and scriptable, and it is why the route was chosen.
+
+**Toolchain probing.** Ran `devecocli` to discover, rather than assume, what it needs. It is a
+wrapper that requires DevEco Studio or Command Line Tools on disk, which turned the Huawei
+download into the project's critical path — a fact worth knowing on hour one rather than hour
+ten.
+
+**Implementation.** The engine was written first and written platform-agnostic, so that 58
+unit tests and a strict `tsc --noEmit` pass could run before an SDK existed. The ArkTS
+skeleton was then grounded on OpenHarmony's IME documentation and the official
+`KikaInputMethod` sample, whose `module.json5` and `input_method_config.json` were fetched and
+followed exactly rather than reconstructed from memory.
+
+**Bugs that testing caught**, none of which would have been visible by reading the code:
+
+1. A nine-digit national phone number did not match the redaction rule at all, because the
+   country-prefix group was mandatory, and a leading `\b` cannot match between a space and a
+   `+`, which left a dangling `+48` fragment in the scrubbed text. Fixed with an optional
+   prefix group plus an explicit boundary policy that replaces the non-portable lookbehind,
+   and both cases are now regression tests.
+2. A test asserted `Proszę wysłać` after a comma, but Polish lowercases after a comma, so the
+   assertion was wrong rather than the code. The test was corrected and the reason recorded in
+   a comment.
+
+**Portability problems found and fixed before the first build:**
+
+- Node's ESM resolver requires `./contracts.ts`; the ArkTS toolchain expects `./contracts`.
+  Rather than compromise either side, `scripts/sync-core.sh` rewrites relative import
+  specifiers during the copy and then **verifies** that none remain.
+- `gitignore` does not support trailing comments on a pattern line. The first `.gitignore`
+  silently matched nothing, and a partially downloaded multi-gigabyte installer briefly
+  entered the staging area. Fixed, and installer extensions are now excluded explicitly.
+
+**A tool built for this situation.** Because the SDK is the only real compiler and a missing
+resource costs a full build cycle, `scripts/check-refs.mjs` statically verifies that every
+relative import, every `$string:`/`$media:`/`$color:`/`$profile:` reference, every declared
+page and every `srcEntry` resolves. It is not a substitute for `devecocli build`; it removes
+the cheap failures from the expensive ones.
+
+**Milestone framing.** The ArkTS skeleton deliberately contains no engine wiring at first.
+The first milestone is proving that a third-party input method can attach to another
+application's text field and write into it, because every other claim depends on that. The
+mode buttons state plainly that they are not the model yet.

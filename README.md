@@ -60,6 +60,7 @@ validation, and [`AI_WORKFLOW.md`](AI_WORKFLOW.md) for how this was built with A
 | --- | --- |
 | `InputMethodExtensionAbility` + `InputMethodEngine` / `TextEditorProxy` | The whole product: system-wide text read/rewrite/insert. Not available to ordinary apps on iOS at all |
 | `inputMethodAbility` lifecycle events | Attach/detach to the active editor, so we know when a field is focused |
+| `EditorAttribute.bundleName` via `editorAttributeChanged` (API 14+) | The keyboard knows **which app owns the field**, so a rewrite can match its register — casual in a messenger, formal in an e-mail client |
 | `@ohos.net.http` | The remote rewrite engine |
 | `hdc shell ime -e/-s` (IME tool, API 20+) | Reproducible enable/switch from the command line instead of clicking through Settings |
 

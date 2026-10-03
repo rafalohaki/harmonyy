@@ -22,7 +22,10 @@ import { display } from '@kit.ArkUI';
 import type { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
-import { TAG, DOMAIN } from './Log';
+import { TAG, DOMAIN } from '../common/Log';
+import type { RewriteMode, RewriteOutcome, RewriteRequest } from '../core/contracts';
+import type { RewriteEngine } from '../core/engine';
+import { BridgeEngineFactory } from '../engine/BridgeEngineFactory';
 
 /** Keyboard height as a fraction of the display. */
 const KEYBOARD_HEIGHT_RATIO: number = 0.34;
@@ -37,9 +40,16 @@ export class KeyboardController {
   private panel: inputMethodEngine.Panel | undefined = undefined;
   private inputClient: inputMethodEngine.InputClient | undefined = undefined;
   private fieldText: string = '';
+  private engine: RewriteEngine | undefined = undefined;
+  private keyboardDelegate: inputMethodEngine.KeyboardDelegate | undefined = undefined;
+  /** Best-effort name of the hosting app, used to pick a register. */
+  private contextHint: string = '';
 
   onCreate(context: InputMethodExtensionContext): void {
     this.context = context;
+    // Built once per extension lifetime. A missing API key is not an error here:
+    // the engine simply falls back to the offline path and says so.
+    this.engine = BridgeEngineFactory.create(context);
     this.publishState(false, '', 'keyboard created');
     this.createPanel();
     this.registerListeners();
@@ -119,11 +129,28 @@ export class KeyboardController {
       hilog.info(DOMAIN, TAG, 'inputStop: editor detached');
       this.publishState(false, this.fieldText, 'editor detached');
     });
+
+    // EditorAttribute.bundleName (API 14+) tells us which application owns the
+    // focused field. That is the contextual signal the prompt uses to match the
+    // register: a message to a friend and an e-mail to an office are not the same
+    // text, even when the words are.
+    this.keyboardDelegate = inputMethodEngine.getKeyboardDelegate();
+    this.keyboardDelegate.on('editorAttributeChanged',
+      (attr: inputMethodEngine.EditorAttribute): void => {
+        this.contextHint = describeHost(attr.bundleName);
+        hilog.info(DOMAIN, TAG, 'editor attribute changed, host hint: %{public}s',
+          this.contextHint);
+      });
   }
 
   private unregisterListeners(): void {
     inputMethodAbility.off('inputStart');
     inputMethodAbility.off('inputStop');
+    const delegate: inputMethodEngine.KeyboardDelegate | undefined = this.keyboardDelegate;
+    if (delegate !== undefined) {
+      delegate.off('editorAttributeChanged');
+      this.keyboardDelegate = undefined;
+    }
   }
 
   /** Read the text before the cursor so a rewrite has something to work on. */
@@ -202,6 +229,49 @@ export class KeyboardController {
     }
   }
 
+  /**
+   * Run the rewrite engine for one mode.
+   *
+   * The engine never throws for an expected failure: it answers with either the
+   * model's variants or the offline engine's, plus a reason. That reason is shown
+   * verbatim on the keyboard, so a degraded answer is never presented as a normal
+   * one.
+   */
+  async rewrite(mode: RewriteMode): Promise<RewriteOutcome> {
+    const request: RewriteRequest = {
+      text: this.getFieldText(),
+      mode: mode,
+      contextHint: this.contextHint,
+      locale: 'pl-PL'
+    };
+
+    const engine: RewriteEngine | undefined = this.engine;
+    if (engine === undefined) {
+      return {
+        variants: [],
+        source: 'local',
+        fallbackReason: 'The engine is not ready yet.',
+        redactedCount: 0,
+        latencyMs: 0
+      };
+    }
+
+    const outcome: RewriteOutcome = await engine.rewrite(request);
+
+    const context: InputMethodExtensionContext | undefined = this.context;
+    if (outcome.source === 'local' && context !== undefined
+      && !BridgeEngineFactory.isConfigured(context)) {
+      // Do not let a missing key masquerade as a rejected one.
+      outcome.fallbackReason = 'Offline: no API key set on this device.';
+    }
+
+    const status: string = outcome.source === 'remote'
+      ? 'model: ' + outcome.latencyMs + ' ms, ' + outcome.redactedCount + ' hidden'
+      : 'offline: ' + outcome.fallbackReason;
+    this.publishState(this.isAttached(), this.fieldText, status);
+    return outcome;
+  }
+
   private publishState(attached: boolean, text: string, status: string): void {
     AppStorage.setOrCreate(KEY_ATTACHED, attached);
     AppStorage.setOrCreate(KEY_FIELD_TEXT, text);
@@ -211,3 +281,35 @@ export class KeyboardController {
 
 /** Single instance shared by the extension ability and the keyboard page. */
 export const keyboardController: KeyboardController = new KeyboardController();
+
+/**
+ * Turn a bundle name into a register hint for the prompt.
+ *
+ * This is a small, honest heuristic, not a classifier. The documentation warns
+ * that bundleName may be an empty string, so that case is handled explicitly, and
+ * an unrecognised bundle is passed through rather than guessed at: a raw package
+ * name is still a useful signal to the model, whereas a wrong friendly label
+ * would not be.
+ */
+export function describeHost(bundleName: string): string {
+  if (bundleName === undefined || bundleName.length === 0) {
+    return '';
+  }
+  const name: string = bundleName.toLowerCase();
+  if (name.includes('mms') || name.includes('sms') || name.includes('messag')) {
+    return 'a casual messaging app (' + bundleName + ')';
+  }
+  if (name.includes('mail') || name.includes('email')) {
+    return 'an e-mail client, so a more formal register fits (' + bundleName + ')';
+  }
+  if (name.includes('note') || name.includes('memo')) {
+    return 'a note-taking app (' + bundleName + ')';
+  }
+  if (name.includes('browser') || name.includes('webview')) {
+    return 'a web page (' + bundleName + ')';
+  }
+  if (name.includes('setting')) {
+    return 'the system settings app (' + bundleName + ')';
+  }
+  return bundleName;
+}

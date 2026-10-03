@@ -11,7 +11,7 @@ import type { Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 import { keyboardController } from './KeyboardController';
-import { TAG, DOMAIN } from './Log';
+import { TAG, DOMAIN } from '../common/Log';
 
 export default class InputMethodService extends InputMethodExtensionAbility {
   onCreate(want: Want): void {

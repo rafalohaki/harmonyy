@@ -4,7 +4,8 @@
 # reproduced by someone else and so that the demo is repeatable.
 #
 # Usage:
-#   scripts/dev-loop.sh tests                 # engine unit tests (no SDK needed)
+#   scripts/dev-loop.sh tests                 # engine tests + reference checks (no SDK needed)
+#   scripts/dev-loop.sh refs                  # static import/resource check only
 #   scripts/dev-loop.sh lint                  # ArkTS static checks
 #   scripts/dev-loop.sh build                 # produce the .hap
 #   scripts/dev-loop.sh run                   # build, install and launch
@@ -12,7 +13,7 @@
 #   scripts/dev-loop.sh shot <name>           # emulator screenshot into docs/evidence/
 #   scripts/dev-loop.sh ui                    # dump the current UI layout
 #
-# Everything except `tests` requires the toolchain and a running emulator.
+# Everything except `tests` and `refs` requires the toolchain and a running emulator.
 
 set -euo pipefail
 
@@ -37,6 +38,14 @@ case "$cmd" in
     echo "== engine unit tests =="
     cd "$BRIDGE_REPO_ROOT"
     node --test core/test/
+    echo
+    echo "== static reference check =="
+    node "$BRIDGE_REPO_ROOT/scripts/check-refs.mjs"
+    ;;
+
+  refs)
+    echo "== static reference check =="
+    node "$BRIDGE_REPO_ROOT/scripts/check-refs.mjs"
     ;;
 
   lint)

@@ -2,56 +2,17 @@
  * Bridge settings: where the OpenAI-compatible endpoint and the API key live.
  *
  * Design decision worth stating: the key is entered on the device and stored in
- * preferences, not compiled in. A key bundled into a HAP is extractable from the
- * package, and a key committed to a public repository is leaked by definition.
+ * device preferences, not compiled in. A key bundled into a HAP is extractable
+ * from the package, and a key committed to a public repository is leaked by
+ * definition.
+ *
+ * The settings store itself lives in common/Settings.ets, because the input
+ * method extension reads it too and must not import from a UI file.
  */
 
-import { preferences } from '@kit.ArkData';
-import type { BusinessError } from '@kit.BasicServicesKit';
-import { hilog } from '@kit.PerformanceAnalysisKit';
-import { common } from '@kit.AbilityKit';
+import type { common } from '@kit.AbilityKit';
 
-import { TAG, DOMAIN } from '../inputmethod/Log';
-
-const STORE_NAME: string = 'bridge_settings';
-const KEY_BASE_URL: string = 'baseUrl';
-const KEY_MODEL: string = 'model';
-const KEY_API_KEY: string = 'apiKey';
-
-const DEFAULT_BASE_URL: string = 'https://api.openai.com/v1';
-const DEFAULT_MODEL: string = 'gpt-4o-mini';
-
-/** Typed access to device preferences. */
-export class BridgeSettings {
-  static read(context: common.UIAbilityContext): BridgeSettings {
-    const options: preferences.Options = { name: STORE_NAME };
-    const store: preferences.Preferences = preferences.getPreferencesSync(context, options);
-    const settings: BridgeSettings = new BridgeSettings();
-    settings.baseUrl = store.getSync(KEY_BASE_URL, DEFAULT_BASE_URL) as string;
-    settings.model = store.getSync(KEY_MODEL, DEFAULT_MODEL) as string;
-    settings.apiKey = store.getSync(KEY_API_KEY, '') as string;
-    return settings;
-  }
-
-  static write(context: common.UIAbilityContext, settings: BridgeSettings): void {
-    const options: preferences.Options = { name: STORE_NAME };
-    const store: preferences.Preferences = preferences.getPreferencesSync(context, options);
-    store.putSync(KEY_BASE_URL, settings.baseUrl);
-    store.putSync(KEY_MODEL, settings.model);
-    store.putSync(KEY_API_KEY, settings.apiKey);
-    store.flush()
-      .then((): void => {
-        hilog.info(DOMAIN, TAG, 'settings saved');
-      })
-      .catch((err: BusinessError): void => {
-        hilog.error(DOMAIN, TAG, 'settings save failed: %{public}s', err.message);
-      });
-  }
-
-  baseUrl: string = DEFAULT_BASE_URL;
-  model: string = DEFAULT_MODEL;
-  apiKey: string = '';
-}
+import { BridgeSettings, DEFAULT_BASE_URL, DEFAULT_MODEL } from '../common/Settings';
 
 @Entry
 @Component
@@ -61,24 +22,24 @@ struct Home {
   @State apiKey: string = '';
   @State saved: string = '';
 
+  private context(): common.UIAbilityContext {
+    return this.getUIContext().getHostContext() as common.UIAbilityContext;
+  }
+
   aboutToAppear(): void {
-    const context: common.UIAbilityContext = this.getUIContext()
-      .getHostContext() as common.UIAbilityContext;
-    const loaded: BridgeSettings = BridgeSettings.read(context);
+    const loaded: BridgeSettings = BridgeSettings.read(this.context());
     this.baseUrl = loaded.baseUrl;
     this.model = loaded.model;
     this.apiKey = loaded.apiKey;
   }
 
   private save(): void {
-    const context: common.UIAbilityContext = this.getUIContext()
-      .getHostContext() as common.UIAbilityContext;
     const settings: BridgeSettings = new BridgeSettings();
     settings.baseUrl = this.baseUrl;
     settings.model = this.model;
     settings.apiKey = this.apiKey;
-    BridgeSettings.write(context, settings);
-    this.saved = 'Saved on this device only.';
+    BridgeSettings.write(this.context(), settings);
+    this.saved = 'Saved on this device only. Nothing is written to the repository.';
   }
 
   build() {
@@ -105,6 +66,11 @@ struct Home {
       Text(this.saved)
         .fontSize(12)
         .fontColor('#2A5CDB')
+
+      Text('Personal data is removed on this device before any text is sent, and ' +
+        'put back afterwards. The keyboard tells you how many items were hidden.')
+        .fontSize(12)
+        .fontColor('#555555')
 
       Text('To use Bridge: enable it in Settings, then switch to it from the ' +
         'keyboard picker. scripts/enable-ime.sh does both from the command line.')
