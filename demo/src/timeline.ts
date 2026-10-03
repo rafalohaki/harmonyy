@@ -33,7 +33,7 @@ export const TITLE = {
 export const CLOSING = {
   line: 'OpenHarmony / HarmonyOS · API 20+ · github.com/rafalohaki/harmonyy',
   honesty: 'Frames captured from the HarmonyOS emulator. Not a mock-up.',
-  note: 'Eleven stills taken on-device with the system snapshot_display tool, assembled with Remotion. No screen in this video was drawn or simulated.',
+  note: 'Twelve stills taken on-device with the system snapshot_display tool, assembled with Remotion. No screen in this video was drawn or simulated.',
 };
 
 /**
@@ -164,6 +164,18 @@ export const SCENES: Scene[] = [
     band: 'top',
     from: {cx: 660, cy: 1450, zoom: 0.82},
     to: {cx: 660, cy: 1600, zoom: 0.92},
+  },
+
+  {
+    kind: 'still',
+    asset: 'stills/12-in-another-app.jpeg',
+    duration: 210,
+    step: '12 · Another app',
+    caption: 'The same rewrite, in the browser\'s own address bar — an app that knows nothing about Bridge.',
+    sub: '"Rewritten by the model in 0.8 s — nothing personal left this device."',
+    band: 'top',
+    from: {cx: 660, cy: 700, zoom: 0.95},
+    to: {cx: 660, cy: 1900, zoom: 1.05},
   },
 
   {kind: 'closing', duration: 225},

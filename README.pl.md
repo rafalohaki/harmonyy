@@ -101,8 +101,8 @@ wychwycona przed scaleniem, a nie po nim.
 | --- | --- | --- | --- |
 | 1 | Publiczne repozytorium kodu źródłowego | to repozytorium | gotowe |
 | 2 | Odtwarzalne instrukcje konfiguracji, budowania, instalacji i uruchamiania | [Budowanie i uruchamianie](#build-and-run), [`scripts/`](scripts) | gotowe w zakresie kroków łańcucha narzędzi; zweryfikowane do granicy SDK |
-| 3 | Działający pakiet `.hap` | [`dist/bridge-1.0.0-signed.hap`](dist/bridge-1.0.0-signed.hap), wytworzony przez `scripts/dev-loop.sh build` + `scripts/sign-hap.sh` | **zbudowany i podpisany** jako zwykła aplikacja; instalacja na emulatorze w toku |
-| 4 | Krótka nagrana demonstracja | plan i lista ujęć w [`docs/DEMO.md`](docs/DEMO.md) | plan gotowy, jeszcze nie nagrano |
+| 3 | Działający pakiet `.hap` | [`dist/bridge-1.0.0-signed.hap`](dist/bridge-1.0.0-signed.hap), wytworzony przez `scripts/dev-loop.sh build` + `scripts/sign-hap.sh` | **zbudowany, podpisany i zainstalowany na emulatorze** jako zwykła aplikacja |
+| 4 | Krótka nagrana demonstracja | [`demo/`](demo) — kompozycja Remotion nad zcommitowanymi klatkami z urządzenia; renderuje się do `demo/out/bridge-demo.mp4`; storyboard w [`docs/DEMO.md`](docs/DEMO.md) | **nagrano** — 81 s z dwunastu klatek zrobionych na urządzeniu |
 | 5 | Opis architektury i implementacji | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | gotowy |
 | 6 | `AI_WORKFLOW.md` | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) | gotowy, aktualizowany w miarę postępów prac |
 | 7 | Dokumentacja integracji z AI | [`docs/AI_INTEGRATION.md`](docs/AI_INTEGRATION.md) | gotowa |
@@ -146,21 +146,31 @@ identyfikatory osobiste (`2 hidden`) powstrzymane przed wysłaniem do modelu
 i przywrócone lokalnie, a także nieosiągalny punkt końcowy degradujący się do
 `offline: The model service could not be reached.` z użytecznym wynikiem offline.
 
+**I w aplikacji, która nic o Bridge nie wie.** To samo przepisanie zadziałało we własnym
+polu wyszukiwania przeglądarki Huawei — cudzej aplikacji bez żadnej integracji i bez
+świadomości, że metoda wprowadzania może przepisywać jej tekst. `ja chciec isc do domu`
+wróciło jako trzy poprawne warianty w 0,8 s, a panel powiedział wprost, co się stało:
+*Ready — Rewritten by the model in 0.8 s — nothing personal left this device*. Zrzut:
+[`docs/evidence/10-rewrite-in-browser.jpeg`](docs/evidence/10-rewrite-in-browser.jpeg).
+Ta klatka jest całą tezą produktu w jednym obrazie: Bridge jest komponentem systemowym,
+więc pojawia się w polach tekstowych należących do innych aplikacji.
+
 ## Stan
 
 | Etap | Stan |
 | --- | --- |
-| Rdzeń silnika przepisywania + testy jednostkowe | **gotowe** — 92 testy przechodzą, `tsc --noEmit` w trybie strict bez błędów |
+| Rdzeń silnika przepisywania + testy jednostkowe | **gotowe** — 96 testów przechodzi, `tsc --noEmit` w trybie strict bez błędów |
 | Łańcuch narzędzi | **gotowe** — DevEco Studio 6.1.1.280, pełne SDK zweryfikowane sumą kontrolną, obraz emulatora zainstalowany |
 | Aplikacja ArkTS | **kompiluje się** — `BUILD SUCCESSFUL` |
 | Podpisywanie | **wykonane offline** przy użyciu tożsamości deweloperskiej z SDK; `app-feature: hos_normal_app` |
 | `.hap` zainstalowany na emulatorze | **gotowe** |
 | Bramka metody wprowadzania: podłączenie, odczyt i zapis w innej aplikacji | **zaliczona**, ze zrzutami ekranu |
 | Przepisanie przez rzeczywisty model, zastosowane w polu | **gotowe**, patrz wyżej |
+| Przepisanie we własnym polu cudzej aplikacji | **gotowe** — pole wyszukiwania przeglądarki Huawei, [`docs/evidence/10-rewrite-in-browser.jpeg`](docs/evidence/10-rewrite-in-browser.jpeg) |
 | Oczyszczanie danych osobowych, udokumentowane na urządzeniu | **gotowe** — `2 hidden`, a wartości przywrócone w wariantach |
 | Działanie offline w razie awarii, udokumentowane na urządzeniu | **gotowe** — nieosiągalny punkt końcowy zwrócił `offline: The model service could not be reached.` oraz użyteczny wynik offline |
 | Tryb Compose (pasek pojęć) | **gotowe** — trzy dotknięcia pojęć utworzyły poprawne gramatycznie zdanie po polsku, zastosowane w polu |
-| Nagranie demonstracji | jeszcze nie — lista ujęć jest gotowa w [`docs/DEMO.md`](docs/DEMO.md) |
+| Nagranie demonstracji | **gotowe** — `demo/out/bridge-demo.mp4`, 81 s, wyrenderowane z dwunastu klatek zrobionych na urządzeniu |
 
 Pierwszym kamieniem milowym nie jest AI. Jest nim dowód, że metoda wprowadzania
 firmy trzeciej potrafi podłączyć się do pola tekstowego innej aplikacji i w nim

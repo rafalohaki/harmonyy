@@ -92,8 +92,8 @@ gets caught before it merges rather than after.
 | --- | --- | --- | --- |
 | 1 | Public source code repository | this repository | ready |
 | 2 | Reproducible setup, build, install and launch instructions | [Build and run](#build-and-run), [`scripts/`](scripts) | ready for the toolchain steps; verified up to the SDK boundary |
-| 3 | A working `.hap` package | [`dist/bridge-1.0.0-signed.hap`](dist/bridge-1.0.0-signed.hap), produced by `scripts/dev-loop.sh build` + `scripts/sign-hap.sh` | **built and signed** as an ordinary app; installation on the emulator pending |
-| 4 | A brief recorded demonstration | plan and shot list in [`docs/DEMO.md`](docs/DEMO.md) | plan ready, not yet recorded |
+| 3 | A working `.hap` package | [`dist/bridge-1.0.0-signed.hap`](dist/bridge-1.0.0-signed.hap), produced by `scripts/dev-loop.sh build` + `scripts/sign-hap.sh` | **built, signed and installed on the emulator** as an ordinary app |
+| 4 | A brief recorded demonstration | [`demo/`](demo) — Remotion composition over committed on-device stills; renders to `demo/out/bridge-demo.mp4`; storyboard in [`docs/DEMO.md`](docs/DEMO.md) | **recorded** — 81 s from twelve stills captured on-device |
 | 5 | Architecture and implementation description | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | ready |
 | 6 | `AI_WORKFLOW.md` | [`AI_WORKFLOW.md`](AI_WORKFLOW.md) | ready, updated as work proceeds |
 | 7 | AI integration documentation | [`docs/AI_INTEGRATION.md`](docs/AI_INTEGRATION.md) | ready |
@@ -135,21 +135,31 @@ Also verified with screenshots in [`docs/evidence/`](docs/evidence): `2 hidden` 
 identifiers withheld from the model and restored locally, and an unreachable endpoint degrading
 to `offline: The model service could not be reached.` with a usable offline result.
 
+**And in an app that knows nothing about Bridge.** The same rewrite ran in the Huawei browser's
+own search field — a third-party app with no integration and no awareness that an input method
+could rewrite its text. `ja chciec isc do domu` came back as three correct variants in 0.8 s,
+and the panel said plainly what happened: *Ready — Rewritten by the model in 0.8 s — nothing
+personal left this device*. Screenshot:
+[`docs/evidence/10-rewrite-in-browser.jpeg`](docs/evidence/10-rewrite-in-browser.jpeg). That
+frame is the product claim in one image: Bridge is a system component, so it shows up in text
+fields that belong to other apps.
+
 ## Status
 
 | Stage | State |
 | --- | --- |
-| Rewrite engine core + unit tests | **done** — 92 tests pass, strict `tsc --noEmit` clean |
+| Rewrite engine core + unit tests | **done** — 96 tests pass, strict `tsc --noEmit` clean |
 | Toolchain | **done** — DevEco Studio 6.1.1.280, Full SDK verified by checksum, emulator image installed |
 | ArkTS application | **compiles** — `BUILD SUCCESSFUL` |
 | Signing | **done offline** with the SDK's development identity; `app-feature: hos_normal_app` |
 | `.hap` installed on the emulator | **done** |
 | Input method gate: attach, read and write in another app | **passed**, with screenshots |
 | Rewrite through a real model, applied to the field | **done**, see above |
+| Rewrite in a third-party app's own field | **done** — the Huawei browser search field, [`docs/evidence/10-rewrite-in-browser.jpeg`](docs/evidence/10-rewrite-in-browser.jpeg) |
 | Personal-data scrubbing, evidenced on the device | **done** — `2 hidden`, and the values restored in the variants |
 | Offline fallback on failure, evidenced on the device | **done** — an unreachable endpoint produced `offline: The model service could not be reached.` and a usable offline result |
 | Compose mode (concept strip) | **done** — three concept taps produced a grammatical Polish sentence, applied to the field |
-| Demo recording | not yet — the shot list is ready in [`docs/DEMO.md`](docs/DEMO.md) |
+| Demo recording | **done** — `demo/out/bridge-demo.mp4`, 81 s, rendered from twelve on-device stills with Remotion |
 
 The first milestone is not the AI. It is proving that a third-party input method
 can attach to another application's text field and write into it, because every
